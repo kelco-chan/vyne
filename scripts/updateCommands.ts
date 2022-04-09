@@ -1,9 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-const DISCORD_TOKEN = <string> process.env.DISCORD_TOKEN;
-const DISCORD_CLIENT_ID = <string> process.env["DISCORD_CLIENT_ID"];
-const DEV_GUILD_ID = <string> process.env["DEV_GUILD_ID"];
+import { DEV_GUILD_ID, DISCORD_CLIENT_ID, DISCORD_TOKEN } from '../assets/config';
 import { Command } from '../lib/Command';
 
 async function main(){

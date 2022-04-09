@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Update commands",
+            "program": "${workspaceFolder}/scripts/updateCommands.ts",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
             "type": "pwa-node",
             "request": "launch",
             "name": "Launch Program",

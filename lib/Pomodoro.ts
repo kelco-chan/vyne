@@ -3,9 +3,7 @@ import { Client, CommandInteraction, Guild, Interaction, Message, MessageEmbed, 
 import { EventEmitter } from "events";
 import type TypedEmitter from "typed-emitter";
 import { Colors } from "../assets/colors";
-const GLOBAL_TIMER_SWEEP_INTERVAL = parseInt(process.env.GLOBAL_TIMER_SWEEP_INTERVAL || "");
-const SESSION_DURATION = parseInt(process.env.SESSION_DURATION || "");
-const WORK_DURATION = parseInt(process.env.WORK_DURATION || "");
+import { GLOBAL_TIMER_SWEEP_INTERVAL, SESSION_DURATION, WORK_DURATION } from "../assets/config";
 import { stripIndents } from "common-tags"
 type PomodoroEvent = {
     passive: (session: Pomodoro) => any;
