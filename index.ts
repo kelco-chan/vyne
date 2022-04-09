@@ -20,6 +20,7 @@ client.on("interactionCreate", async interaction => {
         try{
             let succeeded = await command.handler(interaction);
         }catch(e){
+            console.error(e);
             await interaction.reply({embeds:[
                 new MessageEmbed()
                     .setTitle("Something ran wrong ...")
@@ -43,5 +44,5 @@ setInterval(() => {
     client.user?.setPresence({status:"online", afk:false, activities:[
         activities[Math.floor(Math.random() * activities.length)]
     ]})
-}, 10_000);
+}, 100_000);
 client.login(DISCORD_TOKEN);

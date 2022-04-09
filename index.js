@@ -22,6 +22,7 @@ client.on("interactionCreate", async (interaction) => {
             let succeeded = await command.handler(interaction);
         }
         catch (e) {
+            console.error(e);
             await interaction.reply({ embeds: [
                     new discord_js_1.MessageEmbed()
                         .setTitle("Something ran wrong ...")
@@ -44,6 +45,6 @@ setInterval(() => {
     client.user?.setPresence({ status: "online", afk: false, activities: [
             activities[Math.floor(Math.random() * activities.length)]
         ] });
-}, 10000);
+}, 100000);
 client.login(config_1.DISCORD_TOKEN);
 //# sourceMappingURL=index.js.map
