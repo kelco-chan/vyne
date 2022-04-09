@@ -7,9 +7,13 @@ const discord_js_1 = require("discord.js");
 const Command_1 = require("./lib/Command");
 const config_json_1 = __importDefault(require("./config.json"));
 const colors_1 = require("./assets/colors");
+const Pomodoro_1 = require("./lib/Pomodoro");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
-client.once("ready", () => console.log("Connected to Discord."));
+client.once("ready", () => {
+    console.log("Connected to Discord.");
+    Pomodoro_1.Pomodoro.bindClient(client);
+});
 //handler for commands
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand())
@@ -34,7 +38,7 @@ client.on("interactionCreate", async (interaction) => {
                 new discord_js_1.MessageEmbed()
                     .setTitle("Unknown command")
                     .setColor(colors_1.Colors.error)
-                    .setDescription("Somehow you managed to send in an unknown command. Interesting.")
+                    .setDescription("Somehow you managed to send in an unknown command and studybot didn't know how to respond. Interesting.")
             ] });
     }
 });

@@ -1,12 +1,16 @@
-import {Client, Intents, Interaction, MessageEmbed} from "discord.js";
+import {Client, Intents, Interaction, Message, MessageEmbed, TextChannel} from "discord.js";
 import { InteractionResponseTypes} from "discord.js/typings/enums";
 import { Command } from "./lib/Command";
 import CONFIG from "./config.json";
 import { Colors } from "./assets/colors";
+import { Pomodoro, pomoEventEmitter } from "./lib/Pomodoro";
+import { createAudioResource, getVoiceConnection } from "@discordjs/voice";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
-
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
-client.once("ready", () => console.log("Connected to Discord."));
+client.once("ready", () => {
+    console.log("Connected to Discord.");
+    Pomodoro.bindClient(client);
+});
 //handler for commands
 client.on("interactionCreate", async interaction => {
     if(!interaction.isCommand()) return;
@@ -28,7 +32,7 @@ client.on("interactionCreate", async interaction => {
             new MessageEmbed()
                 .setTitle("Unknown command")
                 .setColor(Colors.error)
-                .setDescription("Somehow you managed to send in an unknown command. Interesting.")
+                .setDescription("Somehow you managed to send in an unknown command and studybot didn't know how to respond. Interesting.")
         ]})
     }
     
