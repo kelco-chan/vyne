@@ -3,7 +3,9 @@ import { Client, CommandInteraction, Guild, Interaction, Message, MessageEmbed, 
 import { EventEmitter } from "events";
 import type TypedEmitter from "typed-emitter";
 import { Colors } from "../assets/colors";
-import { GLOBAL_TIMER_SWEEP_INTERVAL, SESSION_DURATION, WORK_DURATION, SHORT_REST_DURATION } from "../config.json";
+const GLOBAL_TIMER_SWEEP_INTERVAL = parseInt(process.env.GLOBAL_TIMER_SWEEP_INTERVAL || "");
+const SESSION_DURATION = parseInt(process.env.SESSION_DURATION || "");
+const WORK_DURATION = parseInt(process.env.WORK_DURATION || "");
 import { stripIndents } from "common-tags"
 type PomodoroEvent = {
     passive: (session: Pomodoro) => any;
@@ -225,7 +227,7 @@ export class Pomodoro{
             let payload = {embeds:[session.getStatusEmbed(91)]};
             if(!session.lastMessageUpdate){
                 //no msg updates sent yet, invalidate the original interaction
-                session.interaction.editReply({embeds:[], content:"<:invis:962267696966283284>"});
+                session.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"});
             }else{
                 //delete last update
                 session.lastMessageUpdate.delete();

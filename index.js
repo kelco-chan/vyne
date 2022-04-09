@@ -1,11 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const Command_1 = require("./lib/Command");
-const config_json_1 = __importDefault(require("./config.json"));
 const colors_1 = require("./assets/colors");
 const Pomodoro_1 = require("./lib/Pomodoro");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
@@ -42,5 +38,5 @@ client.on("interactionCreate", async (interaction) => {
             ] });
     }
 });
-client.login(config_json_1.default.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN);
 //# sourceMappingURL=index.js.map

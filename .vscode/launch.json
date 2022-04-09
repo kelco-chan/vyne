@@ -14,7 +14,8 @@
             "program": "${workspaceFolder}\\index.ts",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
-            ]
+            ],
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

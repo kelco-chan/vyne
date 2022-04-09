@@ -1,7 +1,6 @@
 import {Client, Intents, Interaction, Message, MessageEmbed, TextChannel} from "discord.js";
 import { InteractionResponseTypes} from "discord.js/typings/enums";
 import { Command } from "./lib/Command";
-import CONFIG from "./config.json";
 import { Colors } from "./assets/colors";
 import { Pomodoro, pomoEventEmitter } from "./lib/Pomodoro";
 import { createAudioResource, getVoiceConnection } from "@discordjs/voice";
@@ -37,4 +36,4 @@ client.on("interactionCreate", async interaction => {
     }
     
 })
-client.login(CONFIG.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN);
