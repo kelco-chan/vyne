@@ -9,5 +9,6 @@ async function main(){
     const rest = new REST({ version: '9' }).setToken(DISCORD_TOKEN);
     await rest.put(Routes.applicationGuildCommands(DISCORD_CLIENT_ID, DEV_GUILD_ID), { body: Command.loaded.map(cmd => cmd.toJSON()) })
     console.log('Successfully registered application commands.');
+    process.exit();
 }
 main();

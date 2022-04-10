@@ -3,13 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const Command_1 = require("./lib/Command");
 const colors_1 = require("./assets/colors");
-const Pomodoro_1 = require("./lib/Pomodoro");
 const config_1 = require("./assets/config");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
 client.once("ready", () => {
     console.log("Connected to Discord.");
-    Pomodoro_1.Pomodoro.bindClient(client);
 });
 //handler for commands
 client.on("interactionCreate", async (interaction) => {

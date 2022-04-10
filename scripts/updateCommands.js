@@ -9,6 +9,7 @@ async function main() {
     const rest = new rest_1.REST({ version: '9' }).setToken(config_1.DISCORD_TOKEN);
     await rest.put(v9_1.Routes.applicationGuildCommands(config_1.DISCORD_CLIENT_ID, config_1.DEV_GUILD_ID), { body: Command_1.Command.loaded.map(cmd => cmd.toJSON()) });
     console.log('Successfully registered application commands.');
+    process.exit();
 }
 main();
 //# sourceMappingURL=updateCommands.js.map

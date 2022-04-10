@@ -2,7 +2,6 @@ import {ActivitiesOptions, Activity, Client, Intents, Interaction, Message, Mess
 import { InteractionResponseTypes} from "discord.js/typings/enums";
 import { Command } from "./lib/Command";
 import { Colors } from "./assets/colors";
-import { Pomodoro, pomoEventEmitter } from "./lib/Pomodoro";
 import { createAudioResource, getVoiceConnection } from "@discordjs/voice";
 import { DISCORD_TOKEN } from "./assets/config";
 import { createServer } from "http";
@@ -10,7 +9,6 @@ const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_V
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
 client.once("ready", () => {
     console.log("Connected to Discord.");
-    Pomodoro.bindClient(client);
 });
 //handler for commands
 client.on("interactionCreate", async interaction => {

@@ -1,24 +1,27 @@
-import { AudioPlayer, createAudioPlayer, createAudioResource, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import { Client, CommandInteraction, Guild, Interaction, Message, MessageEmbed, TextChannel } from "discord.js";
-import { EventEmitter } from "events";
-import type TypedEmitter from "typed-emitter";
+import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import {  CommandInteraction, Guild, Message, MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, SESSION_DURATION, WORK_DURATION } from "../assets/config";
 import { stripIndents } from "common-tags"
-type PomodoroEvent = {
-    passive: (session: Pomodoro) => any;
-    active: (session: Pomodoro) => any;
-    abort: (session: Pomodoro) => any;
-}
 type PomodoroStatus = {
+    /**
+     * The current section that the session is in
+     */
     type:"BREAK" | "WORK",
+    /**
+     * Time elapsed in the current section
+     */
     timeElapsed: number,
+    /**
+     * Time remaining until next work/break section
+     */
     timeRemaining: number,
+    /**
+     * Current cycle (1-4)
+     */
     cycle: number
 }
-
 let activePomodoros:Pomodoro[] = [];
-export const pomoEventEmitter = new EventEmitter() as TypedEmitter<PomodoroEvent>;
 /**
  * A data structure representing a pomodoro session
  */
@@ -85,10 +88,7 @@ export class Pomodoro{
      * Initialises voice connections properly
      */
     async initVoice(){
-        this.connection.on(VoiceConnectionStatus.Disconnected, () => {
-            this.destroy();
-            pomoEventEmitter.emit("abort", this);
-        });
+        this.connection.on(VoiceConnectionStatus.Disconnected, () => this.abort());
         this.playAlarm();
     }
     /**
@@ -110,20 +110,47 @@ export class Pomodoro{
         this.update();
     }
     /**
+     * Aborts pomodoro session and display an error status
+     */
+    async abort(){
+        if(!this.interaction.channel) return;
+        await this.interaction.channel.send({embeds:[new MessageEmbed()
+            .setTitle("Session aborted")
+            .setColor(Colors.error)
+            .setDescription(`The pomodoro session in <#${this.vcId}> has been aborted due to voice channel errors. Please start another session`)
+        ]})
+        this.destroy();
+    }
+    /**
      * Updates the status of the current pomodoro
      */
-    update(){
+    async update(){
         if(this.paused) return;
         this.timeCompleted += Date.now() - this.lastUpdateTime;
         let status = this.getStatus();
-        if(status.cycle === 4 && status.type === "BREAK"){
+        await this.displayUpdate();
+        if((status.cycle === 4 && status.type === "BREAK") || status.cycle > 4){
             this.destroy();
         }else if(status.timeRemaining < 90){
-            pomoEventEmitter.emit("active", this)
+            this.playAlarm();
         }else if(status.timeRemaining < GLOBAL_TIMER_SWEEP_INTERVAL){
             this.timeout = setTimeout(() => this.update(), status.timeRemaining - 50);
         }
         this.lastUpdateTime = Date.now();
+    }
+    /**
+     * Renders and updated to the end user;
+     */
+    async displayUpdate(){
+        let payload = {embeds:[this.getStatusEmbed(91)]};
+        if(!this.lastMessageUpdate){
+            //no msg updates sent yet, invalidate the original interaction; ignore if too long ago
+            this.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"}).catch(e => 1);
+        }else{
+            //delete last update
+            this.lastMessageUpdate.delete();
+        }
+        this.lastMessageUpdate = await this.interaction.channel?.send(payload);
     }
     /**
      * Returns the status of the current pomodoro
@@ -149,7 +176,7 @@ export class Pomodoro{
                 cycle
             }
         }else{
-            throw new Error("Interesting modulo ...")
+            throw new Error(`Interesting modulo of ${modulo} ...`)
         }
     }
     /**
@@ -160,7 +187,7 @@ export class Pomodoro{
     getStatusEmbed(seekAhead?: number): MessageEmbed{
         let status = this.getStatus(seekAhead);
         let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
-        let progress = Math.floor(status.timeElapsed / SESSION_DURATION * (message.length - 3));
+        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
         if(status.type === "BREAK" && status.cycle === 4){
             return new MessageEmbed()
                 .setTitle("Session finished")
@@ -209,37 +236,11 @@ export class Pomodoro{
     /**
      * Batch updates all pomodoro sessions. See `Pomodoro#update` for more information
      */
-    static updateAll(){
+    static async updateAll(){
+        console.log(`Batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
-            pomo.update();
+            await pomo.update();
         }
-    }
-    /**
-     * Sets up updates that are triggered by timers AND NOT BY COMMAND INTERACTIONS
-     * @param client The client used to deliver alarms
-     */
-    static bindClient(client: Client){
-        pomoEventEmitter.on("active", async (session) => {
-            if(!session.interaction.channel) return;
-            session.playAlarm();
-            let payload = {embeds:[session.getStatusEmbed(91)]};
-            if(!session.lastMessageUpdate){
-                //no msg updates sent yet, invalidate the original interaction
-                session.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"});
-            }else{
-                //delete last update
-                session.lastMessageUpdate.delete();
-            }
-            session.lastMessageUpdate = await session.interaction.channel.send(payload);
-        });
-        pomoEventEmitter.on("abort", async session => {
-            if(!session.interaction.channel) return;
-            await session.interaction.channel.send({embeds:[new MessageEmbed()
-                .setTitle("Session aborted")
-                .setColor(Colors.error)
-                .setDescription(`The pomodoro session in <#${session.vcId}> has been aborted due to voice channel errors. Please start another session`)
-            ]})
-        })
     }
 }
 setInterval(() => Pomodoro.updateAll(), GLOBAL_TIMER_SWEEP_INTERVAL);
