@@ -7,7 +7,7 @@ const config_1 = require("./assets/config");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
 client.once("ready", () => {
-    console.log("Connected to Discord.");
+    console.log(`Connected to Discord, serving ${client.guilds.cache} guilds.`);
 });
 //handler for commands
 client.on("interactionCreate", async (interaction) => {
@@ -38,8 +38,8 @@ client.on("interactionCreate", async (interaction) => {
             ] });
     }
 });
-const activities = [{ name: "pomodoro timers", type: "PLAYING" }, { name: "prototype lofi beats", type: "LISTENING" }, { name: "/help", type: "PLAYING" }, { name: "you study", type: "WATCHING" }];
 setInterval(() => {
+    const activities = [{ name: "with pomodoro timers", type: "PLAYING" }, { name: "/help", type: "PLAYING" }, { name: "you study", type: "WATCHING" }, { name: `over ${client.guilds.cache.size}`, type: "WATCHING" }];
     client.user?.setPresence({ status: "online", afk: false, activities: [
             activities[Math.floor(Math.random() * activities.length)]
         ] });

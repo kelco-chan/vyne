@@ -1,14 +1,11 @@
 import {ActivitiesOptions, Activity, Client, Intents, Interaction, Message, MessageEmbed, TextChannel} from "discord.js";
-import { InteractionResponseTypes} from "discord.js/typings/enums";
 import { Command } from "./lib/Command";
 import { Colors } from "./assets/colors";
-import { createAudioResource, getVoiceConnection } from "@discordjs/voice";
 import { DISCORD_TOKEN } from "./assets/config";
-import { createServer } from "http";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
 client.once("ready", () => {
-    console.log("Connected to Discord.");
+    console.log(`Connected to Discord, serving ${client.guilds.cache} guilds.`);
 });
 //handler for commands
 client.on("interactionCreate", async interaction => {
@@ -37,8 +34,8 @@ client.on("interactionCreate", async interaction => {
     }
     
 });
-const activities:ActivitiesOptions[] = [{name : "pomodoro timers", type:"PLAYING"}, {name:"prototype lofi beats", type:"LISTENING"},{name:"/help", type:"PLAYING"},{name:"you study", type:"WATCHING"}]
 setInterval(() => {
+    const activities:ActivitiesOptions[] = [{name : "with pomodoro timers", type:"PLAYING"}, {name:"/help", type:"PLAYING"}, {name:"you study", type:"WATCHING"}, {name:`over ${client.guilds.cache.size}`, type:"WATCHING"}]
     client.user?.setPresence({status:"online", afk:false, activities:[
         activities[Math.floor(Math.random() * activities.length)]
     ]})

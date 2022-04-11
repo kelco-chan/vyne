@@ -5,7 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Update commands",
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Update dev commands",
             "program": "${workspaceFolder}/scripts/updateCommands.ts",
             "request": "launch",
             "skipFiles": [
@@ -18,17 +31,17 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "type": "pwa-node",
+            "name": "Update prod commands",
+            "program": "${workspaceFolder}/scripts/updateCommands.ts",
             "request": "launch",
-            "name": "Launch Program",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\index.ts",
+            "type": "node",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.prod.env"
         }
     ]
 }
