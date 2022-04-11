@@ -143,12 +143,14 @@ export class Pomodoro{
      */
     async displayUpdate(){
         let payload = {embeds:[this.getStatusEmbed(91)]};
-        if(!this.lastMessageUpdate){
-            //no msg updates sent yet, invalidate the original interaction; ignore if too long ago
-            this.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"}).catch(e => 1);
+        if(!this.interaction.replied){
+            ;//skip, no updates are necessary
+        }else if(!this.lastMessageUpdate){
+            //no msg updates sent yet, invalidate the original interaction
+            await this.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"});
         }else{
             //delete last update
-            this.lastMessageUpdate.delete();
+            await this.lastMessageUpdate.delete();
         }
         this.lastMessageUpdate = await this.interaction.channel?.send(payload);
     }
