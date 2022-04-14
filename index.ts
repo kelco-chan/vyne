@@ -35,7 +35,7 @@ client.on("interactionCreate", async interaction => {
     
 });
 setInterval(() => {
-    const activities:ActivitiesOptions[] = [{name : "with pomodoro timers", type:"PLAYING"}, {name:"/help", type:"PLAYING"}, {name:"you study", type:"WATCHING"}, {name:`over ${client.guilds.cache.size}`, type:"WATCHING"}]
+    const activities:ActivitiesOptions[] = [{name : "with pomodoro timers", type:"PLAYING"}, {name:"you study", type:"WATCHING"}, {name:`over ${client.guilds.cache.size} servers`, type:"WATCHING"}]
     client.user?.setPresence({status:"online", afk:false, activities:[
         activities[Math.floor(Math.random() * activities.length)]
     ]})

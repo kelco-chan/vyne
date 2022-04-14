@@ -1,6 +1,5 @@
 config.json
 node_modules
 .env
-**/*.js.map
 .VSCodeCounter
 .prod.env
