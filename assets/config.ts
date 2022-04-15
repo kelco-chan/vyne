@@ -6,3 +6,7 @@ export const SESSION_DURATION = 30 * 60_000;
 export const WORK_DURATION = 25 * 60_000;
 
 export const GLOBAL_TIMER_SWEEP_INTERVAL = SESSION_DURATION / 6;
+/**
+ * Maximum allowed error in pomodoro alert timing in MS
+ */
+export const MAX_TIMER_ALLOWED_ERROR = 100;

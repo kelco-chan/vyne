@@ -7,7 +7,7 @@ const config_1 = require("./assets/config");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
 client.once("ready", () => {
-    console.log(`Connected to Discord, serving ${client.guilds.cache} guilds.`);
+    console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });
 //handler for commands
 client.on("interactionCreate", async (interaction) => {

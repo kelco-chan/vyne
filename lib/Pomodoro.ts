@@ -1,7 +1,7 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import {  CommandInteraction, Guild, Message, MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
-import { GLOBAL_TIMER_SWEEP_INTERVAL, SESSION_DURATION, WORK_DURATION } from "../assets/config";
+import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../assets/config";
 import { stripIndents } from "common-tags"
 type PomodoroStatus = {
     /**
@@ -85,11 +85,11 @@ export class Pomodoro{
         console.log(`Created 1 session, ${activePomodoros.length} active`);
     }
     /**
-     * Initialises voice connections properly
+     * Initialises voice connections
      */
     async initVoice(){
-        this.connection.on(VoiceConnectionStatus.Disconnected, () => this.abort());
         this.playAlarm();
+        this.connection.on(VoiceConnectionStatus.Disconnected, () => this.abort());
     }
     /**
      * Pauses the pomodoro session
@@ -110,6 +110,18 @@ export class Pomodoro{
         this.update();
     }
     /**
+     * Schedules a callback to be triggered in the future, similar to `setTimeout()`
+     * @param cb callback function to be executed
+     * @param ms delay in ms
+     */
+    schedule(cb: () => any, ms: number){
+        if(this.timeout) throw new Error("Pomodoro sessions cannot schedule 2 things at the same time");
+        this.timeout = setTimeout(() => {
+            cb();
+            this.timeout = undefined;
+        }, ms);
+    }
+    /**
      * Aborts pomodoro session and display an error status
      */
     async abort(){
@@ -124,33 +136,31 @@ export class Pomodoro{
     /**
      * Updates the status of the current pomodoro
      */
-    async update(){
+    update(){
         if(this.paused) return;
         this.timeCompleted += Date.now() - this.lastUpdateTime;
         let status = this.getStatus();
-        await this.displayUpdate();
         if((status.cycle === 4 && status.type === "BREAK") || status.cycle > 4){
             this.destroy();
-        }else if(status.timeRemaining < 90){
-            this.playAlarm();
         }else if(status.timeRemaining < GLOBAL_TIMER_SWEEP_INTERVAL){
-            this.timeout = setTimeout(() => this.update(), status.timeRemaining - 50);
+            if(!this.timeout){
+                this.schedule(() => {this.update(); this.displayUpdate(true)}, status.timeRemaining - MAX_TIMER_ALLOWED_ERROR);
+            }
         }
         this.lastUpdateTime = Date.now();
     }
     /**
      * Renders and updated to the end user;
+     * @param playAlarm whether or not to play an alarm
      */
-    async displayUpdate(){
-        let payload = {embeds:[this.getStatusEmbed(91)]};
-        if(!this.interaction.replied){
-            ;//skip, no updates are necessary
-        }else if(!this.lastMessageUpdate){
-            //no msg updates sent yet, invalidate the original interaction
-            await this.interaction.editReply({embeds:[], content:"<:invis2:962287384513355806>"});
-        }else{
-            //delete last update
-            await this.lastMessageUpdate.delete();
+    async displayUpdate(playAlarm?: boolean){
+        if(!this.interaction.replied) return; //no updates needed if no session initialised yet
+        if(playAlarm) this.playAlarm();
+        //fetch the embed at a later time, just in case things go wrong
+        let payload = {embeds:[this.getStatusEmbed(MAX_TIMER_ALLOWED_ERROR)]};
+        //this.interaction.editReply(payload);    
+        if(this.lastMessageUpdate){
+            this.lastMessageUpdate.delete();
         }
         this.lastMessageUpdate = await this.interaction.channel?.send(payload);
     }
@@ -197,14 +207,14 @@ export class Pomodoro{
                 .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros!")
         }
         return new MessageEmbed()
-            .setTitle(status.type === "WORK" ? "Working" : "Taking a break")
+            .setTitle(status.type === "WORK" ? "Working ..." : "Taking a break ...")
             .setDescription(stripIndents`\`\`\`less
                 ${message}
                 [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
                 \`\`\``)
+            .addField("Cycle", `${status.cycle}/4`, true)
             .addField("Elapsed", `${Math.round(status.timeElapsed/60000)}m`, true)
             .addField("Remaining", `${Math.round(status.timeRemaining/60000)}m`, true)
-            .addField("Cycle", `${status.cycle}/4`, true)
             .setFooter({text:`Status last updated on ${new Date().toLocaleTimeString("en-US")}`, iconURL: (this.interaction.client.user?.avatarURL() || "")})
             .setColor(Colors.success)
     }
@@ -228,12 +238,10 @@ export class Pomodoro{
         this.audioPlayer.play(createAudioResource(`${__dirname}/../assets/notif.wav`));
     }
     /**
-     * Finds a pomodoro session based on voice channe;
-     * @param vcId voice channel of the desired pomodoro session
-     * @returns if exists, the corresponding pomodoro session
+     * A list of active pomodoros
      */
-    static find(vcId: string): Pomodoro|undefined{
-        return activePomodoros.find(pomo => pomo.vcId === vcId);
+    static get active(){
+        return activePomodoros;
     }
     /**
      * Batch updates all pomodoro sessions. See `Pomodoro#update` for more information
@@ -242,6 +250,7 @@ export class Pomodoro{
         console.log(`Batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
             await pomo.update();
+            await pomo.displayUpdate(false);
         }
     }
 }

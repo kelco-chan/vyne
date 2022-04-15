@@ -5,7 +5,7 @@ import { DISCORD_TOKEN } from "./assets/config";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
 client.once("ready", () => {
-    console.log(`Connected to Discord, serving ${client.guilds.cache} guilds.`);
+    console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });
 //handler for commands
 client.on("interactionCreate", async interaction => {

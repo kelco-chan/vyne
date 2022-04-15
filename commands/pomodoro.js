@@ -25,7 +25,7 @@ exports.default = new Command_1.Command()
             ] });
         return false;
     }
-    let currentSession = Pomodoro_1.Pomodoro.find(vcId);
+    let currentSession = Pomodoro_1.Pomodoro.active.find(pomo => pomo.interaction.guildId);
     let subcmd = interaction.options.getSubcommand();
     if (subcmd === "start") {
         if (currentSession) {
@@ -33,13 +33,14 @@ exports.default = new Command_1.Command()
                     new discord_js_1.MessageEmbed()
                         .setTitle("Session already running")
                         .setColor(colors_1.Colors.error)
-                        .setDescription("There is already a pomodoro session in your current voice channel. Run `/pomodoro status` to view the status or go to a different voice channel.")
+                        .setDescription(`There is already a pomodoro session in your current guild in <#${currentSession.vcId}>. Join the voice channel and run \`/pomo status\` to view its status.`)
                 ] });
             return false;
         }
         let pomo = new Pomodoro_1.Pomodoro(vcId, interaction, interaction.guild);
         await pomo.initVoice();
-        await interaction.reply({ embeds: [pomo.getStatusEmbed().setTitle("Session started")] });
+        await interaction.reply({ content: "Started pomodoro session", ephemeral: true });
+        await pomo.displayUpdate();
         return true;
     }
     else if (subcmd === "status" || subcmd === "pause" || subcmd === "resume" || subcmd === "stop") {
@@ -48,14 +49,23 @@ exports.default = new Command_1.Command()
                     new discord_js_1.MessageEmbed()
                         .setTitle("No session running")
                         .setColor(colors_1.Colors.error)
-                        .setDescription("There are no active pomodoro sessions in this voice channel right now to query nor modify. Please start one using `/pomodoro start`")
+                        .setDescription("There are no active pomodoro sessions in this voice channel right now to query nor modify. Please start one using `/pomo start`")
+                ] });
+            return false;
+        }
+        if (currentSession.vcId !== interaction.member.voice.channelId) {
+            await interaction.reply({ embeds: [
+                    new discord_js_1.MessageEmbed()
+                        .setTitle("Session isn't here")
+                        .setColor(colors_1.Colors.error)
+                        .setDescription(`The pomodoro session is currently active in <#${currentSession.vcId}>. Please join that voice channel instead to use pomodoro timers`)
                 ] });
             return false;
         }
         let embed;
         //force an update
-        currentSession.update();
         if (subcmd === "status") {
+            currentSession.update();
             embed = currentSession.getStatusEmbed();
         }
         else if (subcmd === "pause") {
