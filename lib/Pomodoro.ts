@@ -137,7 +137,10 @@ export class Pomodoro{
      * Updates the status of the current pomodoro
      */
     update(){
-        if(this.paused) return;
+        if(this.paused){
+            this.lastUpdateTime = Date.now();
+            return;
+        };
         this.timeCompleted += Date.now() - this.lastUpdateTime;
         let status = this.getStatus();
         if((status.cycle === 4 && status.type === "BREAK") || status.cycle > 4){
@@ -249,6 +252,7 @@ export class Pomodoro{
     static async updateAll(){
         console.log(`Batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
+            if(pomo.paused) continue;
             await pomo.update();
             await pomo.displayUpdate(false);
         }
