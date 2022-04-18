@@ -1,18 +1,49 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { CommandInteraction, Interaction, InteractionReplyOptions, MessageActionRow, MessageEmbed } from "discord.js";
+import { ModalData, ModalSubmitInteraction } from "discord-modals";
+import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, MessageActionRow, MessageEmbed, SelectMenuInteraction } from "discord.js";
 import { InteractionResponseTypes } from "discord.js/typings/enums";
 import readdir from "recursive-readdir"
+import { CustomIdEntry } from "./InteractionCache";
 type CommandHandler = (interaction: CommandInteraction) => Promise<boolean>;
+type ButtonHandler<T> = (interaction: ButtonInteraction, entry: CustomIdEntry<T>) => Promise<boolean|undefined>;
+type SelectMenuHandler<T> = (interaction: SelectMenuInteraction, entry: CustomIdEntry<T>) => Promise<boolean|undefined>;
+type ModalHandler<T> = (interaction: ModalSubmitInteraction, entry: CustomIdEntry<T>) => Promise<boolean|undefined>;
+
 let commands:Command[] = [];
 export class Command extends SlashCommandBuilder{
+    /**
+     * slash command handler for that interaction;
+     */
     handler: CommandHandler;
+
+    buttonHandlers: ButtonHandler<any>[];
+    selectMenuHandlers: SelectMenuHandler<any>[];
+    modalHandlers: ModalHandler<any>[];
+
     constructor(){
         super();
-        this.handler = () => { throw new Error(`Empty handler for function ${this.name}`) }
+        this.handler = () => { throw new Error(`Empty handler for function ${this.name}`) };
+        this.buttonHandlers = [];
+        this.selectMenuHandlers = [];
+        this.modalHandlers = [];
     }
     matches(interaction: Interaction): boolean{
         return interaction.isCommand() && (interaction.commandName === this.name);
     }
+
+    addButtonHandler<T>(handler:ButtonHandler<T>){
+        this.buttonHandlers.push(handler);
+        return this;
+    }
+    addSelectMenuHandler<T>(handler:SelectMenuHandler<T>){
+        this.selectMenuHandlers.push(handler);
+        return this;
+    }
+    addModalHandler<T>(handler:ModalHandler<T>){
+        this.modalHandlers.push(handler);
+        return this;
+    }
+
     setHandler(handler: CommandHandler){
         this.handler = handler;
         return this;

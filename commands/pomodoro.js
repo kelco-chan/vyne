@@ -1,9 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const discord_modals_1 = require("discord-modals");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const Command_1 = require("../lib/Command");
+const InteractionCache_1 = require("../lib/InteractionCache");
 const Pomodoro_1 = require("../lib/Pomodoro");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 exports.default = new Command_1.Command()
     .setName("pomo")
     .setDescription("Commands for setting up a pomodoro timer")
@@ -62,23 +68,22 @@ exports.default = new Command_1.Command()
                 ] });
             return false;
         }
-        let embed;
+        let payload = currentSession.getStatusPayload();
         //force an update
         if (subcmd === "status") {
             currentSession.update();
-            embed = currentSession.getStatusEmbed();
         }
         else if (subcmd === "pause") {
             currentSession.pause();
-            embed = currentSession.getStatusEmbed().setTitle("Session paused");
+            payload.embeds[0]?.setTitle("Session paused");
         }
         else if (subcmd === "resume") {
             currentSession.resume();
-            embed = currentSession.getStatusEmbed().setTitle("Session resumed");
+            payload.embeds[0]?.setTitle("Session resumed");
         }
         else if (subcmd === "stop") {
             currentSession.destroy();
-            embed = new discord_js_1.MessageEmbed()
+            payload.embeds[0] = new discord_js_1.MessageEmbed()
                 .setTitle("Session stopped")
                 .setColor(colors_1.Colors.error)
                 .setDescription(`The session in <#${vcId}> has been successfully stopped.`);
@@ -86,12 +91,45 @@ exports.default = new Command_1.Command()
         else {
             throw new Error("unreachable code");
         }
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply(payload);
         return true;
     }
     else {
         throw new Error(`Unknown subcommand ${interaction.options.getSubcommand()}`);
     }
+})
+    .addButtonHandler(async (interaction, { data }) => {
+    if (data.cmd !== "prompt_completed_task")
+        return;
+    let modal = new discord_modals_1.Modal()
+        .setTitle("Task Completion Check")
+        .setCustomId((0, InteractionCache_1.cache)({ cmd: "submit_completed_task", sessionId: data.sessionId }, { users: [interaction.user.id], duration: 3 * 60000 }))
+        .addComponents(new discord_modals_1.TextInputComponent()
+        .setLabel("What task did you just complete?")
+        .setPlaceholder("All of the devious english homework")
+        .setStyle("SHORT")
+        .setRequired(true)
+        .setCustomId("task"));
+    await (0, discord_modals_1.showModal)(modal, { client: interaction.client, interaction });
+    interaction.replied = true;
+    return true;
+})
+    .addModalHandler(async (interaction, { data }) => {
+    if (data.cmd !== "submit_completed_task")
+        return;
+    let task = interaction.getTextInputValue("task");
+    await prisma_1.default.session.update({
+        where: { id: data.sessionId },
+        data: { tasksCompleted: { push: task } }
+    });
+    await interaction.reply({ embeds: [
+            new discord_js_1.MessageEmbed()
+                .setTitle("Task saved")
+                .setColor(colors_1.Colors.success)
+                .setDescription("Your task has been successfully saved, and you held yourself accoutable for what you did in the last 25 minutes!")
+                .setFooter(`Session ID: ${data.sessionId}`)
+        ] });
+    return true;
 })
     .addSubcommand(subcmd => subcmd
     .setName("start")

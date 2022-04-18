@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Guild{
+  id             String    @id @map("_id")
+  sessions       Session[]
+}
+model User{
+  id             String                   @id @map("_id")
+  joined         DateTime                 @default(now())
+  participants   SessionParticipant[]
+}
+
+model Session{
+  id           String    @id @map("_id") @default(uuid())
+  started      DateTime 
+  ended        DateTime?
+  participants SessionParticipant[]
+
+  guild        Guild     @relation(fields: [guildId], references: [id])
+  guildId      String
+  vcId         String
+}
+
+model SessionParticipant{
+  userId         String  @id @map("_id")
+  user           User    @relation(fields:[userId], references: [id])
+  sessionId      String
+  session        Session @relation(fields: [sessionId], references: [id])
+  timeCompleted  Int
+  tasksCompleted String[]
+}
