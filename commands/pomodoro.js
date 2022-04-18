@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_modals_1 = require("discord-modals");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
+const embeds_1 = require("../assets/embeds");
 const Command_1 = require("../lib/Command");
 const InteractionCache_1 = require("../lib/InteractionCache");
 const Pomodoro_1 = require("../lib/Pomodoro");
@@ -15,11 +16,7 @@ exports.default = new Command_1.Command()
     .setDescription("Commands for setting up a pomodoro timer")
     .setHandler(async (interaction) => {
     if (!interaction.member || !interaction.inCachedGuild()) {
-        await interaction.reply({ embeds: [new discord_js_1.MessageEmbed()
-                    .setTitle("Server only command")
-                    .setColor(colors_1.Colors.error)
-                    .setDescription("Sorry, but pomodoro timers are only available in a server")
-            ] });
+        await interaction.reply({ embeds: [embeds_1.Embeds.SERVER_ONLY] });
         return false;
     }
     let vcId = interaction.member.voice.channelId;
@@ -44,7 +41,7 @@ exports.default = new Command_1.Command()
             return false;
         }
         let pomo = new Pomodoro_1.Pomodoro(vcId, interaction, interaction.guild);
-        await pomo.initVoice();
+        pomo.init();
         await interaction.reply({ content: "Started pomodoro session", ephemeral: true });
         await pomo.displayUpdate();
         return true;
@@ -118,15 +115,27 @@ exports.default = new Command_1.Command()
     if (data.cmd !== "submit_completed_task")
         return;
     let task = interaction.getTextInputValue("task");
-    await prisma_1.default.session.update({
-        where: { id: data.sessionId },
-        data: { tasksCompleted: { push: task } }
+    await prisma_1.default.sessionParticipant.upsert({
+        where: { userId_sessionId: {
+                userId: interaction.user.id,
+                sessionId: data.sessionId
+            } },
+        update: {
+            tasksCompleted: {
+                push: task
+            }
+        },
+        create: {
+            timeCompleted: 0,
+            userId: interaction.user.id,
+            sessionId: data.sessionId
+        }
     });
     await interaction.reply({ embeds: [
             new discord_js_1.MessageEmbed()
                 .setTitle("Task saved")
                 .setColor(colors_1.Colors.success)
-                .setDescription("Your task has been successfully saved, and you held yourself accoutable for what you did in the last 25 minutes!")
+                .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
                 .setFooter(`Session ID: ${data.sessionId}`)
         ] });
     return true;

@@ -19,6 +19,10 @@ exports.Embeds = {
     INVALID_USER: new discord_js_1.MessageEmbed()
         .setTitle("Invalid user")
         .setColor(colors_1.Colors.error)
-        .setDescription("This is not your interaction. Please run the appropriate command yourself.")
+        .setDescription("This is not your interaction. Please run the appropriate command yourself."),
+    SERVER_ONLY: new discord_js_1.MessageEmbed()
+        .setTitle("Server only command")
+        .setColor(colors_1.Colors.error)
+        .setDescription("Sorry, but this command is only available in a server")
 };
 //# sourceMappingURL=embeds.js.map

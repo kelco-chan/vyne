@@ -1,11 +1,12 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed } from "discord.js";
+import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel } from "discord.js";
 import { Colors } from "../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../assets/config";
 import { stripIndents } from "common-tags"
 import { cache } from "./InteractionCache";
 import { nanoid } from "nanoid";
 import prisma from "./prisma";
+import PausableTimer from "./PausableTimer";
 type PomodoroStatus = {
     /**
      * The current section that the session is in
@@ -70,6 +71,10 @@ export class Pomodoro{
      */
     lastMessageUpdate?: Message;
     /**
+     * List of timers to track the time spent by each individual user;
+     */
+    userTimers: Map<string, PausableTimer>
+    /**
      * Constructor of the pomodoro class
      * @param vcId ID of the vc in which this pomodoro belongs
      * @param interacion The interaction taht initiated this pomodoro session
@@ -78,6 +83,7 @@ export class Pomodoro{
     constructor(vcId: string, interaction: CommandInteraction, guild:Guild){
         this.id = nanoid();
         this.timeCompleted = 0;
+        this.userTimers = new Map();
         this.lastUpdateTime = Date.now();
         this.paused = false;
         this.interaction = interaction;
@@ -90,20 +96,15 @@ export class Pomodoro{
         this.audioPlayer = createAudioPlayer();
         this.connection.subscribe(this.audioPlayer);
         activePomodoros.push(this);
-        this.create();
         console.log(`Created 1 session, ${activePomodoros.length} active`);
     }
     /**
-     * Initialises voice connections
+     * Inits the pomodoro session
      */
-    async initVoice(){
+    async init(){
         this.playAlarm();
         this.connection.on(VoiceConnectionStatus.Disconnected, () => this.abort());
-    }
-    /**
-     * Creates Prisma entry of session
-     */
-    async create(){
+        let members = await this.getCurrentMembers();
         await prisma.session.create({
             data:{
                 id: this.id,
@@ -114,11 +115,21 @@ export class Pomodoro{
                         create:{id: this.interaction.guildId as string}
                     }
                 },
-                voiceChannel: this.vcId,
-                participantIds: (await this.getCurrentMembers()).map(member => member.id),
-                tasksCompleted: []
+                vcId: this.vcId,
+                participants:{
+                    create:members.map(member => ({
+                        user: {connectOrCreate: {
+                            where: {id: member.user.id},
+                            create:{id: member.user.id, joined: new Date()}
+                        }},
+                        timeCompleted: 0
+                    }))
+                }
             }
-        })
+        });
+        for(const member of members){
+            this.userTimers.set(member.user.id, new PausableTimer());
+        }
     }
     /**
      * Pauses the pomodoro session
@@ -129,6 +140,9 @@ export class Pomodoro{
         if(this.timeout){
             clearTimeout(this.timeout);
         }
+        for(let [_, timer] of this.userTimers){
+            timer.pause();
+        }
     }
     /**
      * Resumes the pomodoro session
@@ -137,6 +151,9 @@ export class Pomodoro{
         this.paused = false;
         this.lastUpdateTime = Date.now();
         this.update();
+        for(let [_, timer] of this.userTimers){
+            timer.resume();
+        }
     }
     /**
      * Schedules a callback to be triggered in the future, similar to `setTimeout()`
@@ -181,13 +198,35 @@ export class Pomodoro{
             }
         }
         this.lastUpdateTime = Date.now();
+        //stagger the db updates so uyou dont have a billion db writes in 1 second
+        setTimeout(() => this.upsertParticipantStates(), SESSION_DURATION / 20 * Math.random())
         
-        prisma.session.update({
-            where:{id: this.id},
-            data:{
-                timeCompleted:this.timeCompleted,
-            }
-        })
+    }
+    /**
+     * Upsert the states of all participants
+     */
+    async upsertParticipantStates(){
+        for(let [userId, timer] of this.userTimers){
+            await prisma.sessionParticipant.upsert({
+                where:{ userId_sessionId:{
+                    userId: userId,
+                    sessionId: this.id
+                }},
+                update:{
+                    timeCompleted: timer.elapsed
+                },
+                create:{
+                    user: {connectOrCreate:{
+                        where:{id: userId},
+                        create: {id: userId}
+                    }},
+                    session: {connect:{
+                        id: this.id
+                    }},
+                    timeCompleted: timer.elapsed
+                }
+            })
+        }
     }
     /**
      * Renders and updated to the end user;
@@ -279,20 +318,19 @@ export class Pomodoro{
      */
     destroy(){
         this.connection.destroy();
-        //@ts-ignore
-        this.audioPlayer = null; //manually delete this property
         if(this.timeout){
             clearTimeout(this.timeout);
         }
         activePomodoros = activePomodoros.filter(pomo => pomo != this);
-        prisma.session.update({
-            where: {id: this.id},
-            data:{
-                timeCompleted: this.timeCompleted,
-                ended: new Date()
-            }
-        })
-        console.log(`Destroyed 1 session, ${activePomodoros.length} remain`);
+        //persist information
+        (async () => {
+            await prisma.session.update({
+                where: { id: this.id },
+                data:{ ended: new Date() }
+            });
+            await this.upsertParticipantStates();
+            console.log(`Destroyed 1 session, ${activePomodoros.length} remain`);
+        })() 
     }
     /**
      * Plays the alarm tune on the VC
@@ -324,7 +362,8 @@ export class Pomodoro{
     async getCurrentMembers(): Promise<GuildMember[]>{
         let channel = <BaseGuildVoiceChannel> await this.interaction.client.channels.fetch(this.vcId);
         if(!channel) return [];
-        return channel.members.toJSON() || [];
+        return channel.members.toJSON().filter(member => !member.user.bot) || [];
     }
+
 }
 setInterval(() => Pomodoro.updateAll(), GLOBAL_TIMER_SWEEP_INTERVAL);

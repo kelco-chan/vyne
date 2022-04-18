@@ -8,6 +8,8 @@ import { resolveEntry } from "./lib/InteractionCache";
 import discordModals from "discord-modals";
 import prisma from "./lib/prisma";
 import { Pomodoro } from "./lib/Pomodoro";
+import PausableTimer from "./lib/PausableTimer";
+import { time } from "@discordjs/builders";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 
 discordModals(client);
@@ -106,10 +108,28 @@ client.on("modalSubmit", async interaction => {
     }
     if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 })
-client.on("voiceStateUpdate", (_, state) => {
-    let member = state.member;
+client.on("voiceStateUpdate", (oldState, newState) => {
+    let member = oldState.member;
     if(!member || member.user.bot) return;
-    let session = Pomodoro.active.find(session => session.vcId === state.channelId);
+    let oldSession = Pomodoro.active.find(session => session.vcId === oldState.channelId);
+    let newSession = Pomodoro.active.find(session => session.vcId === newState.channelId);
+    if(oldSession){
+        let timer = oldSession.userTimers.get(member.user.id);
+        timer && timer.pause();
+    }
+    if(newSession){
+        let timer = newSession.userTimers.get(member.user.id);
+        if(!timer){
+            timer = new PausableTimer();
+            newSession.userTimers.set(member.user.id, timer);
+        }
+        if(newSession.paused){
+            timer.pause();
+        }else{
+            timer.resume();
+        }
+        
+    }
 })
 setInterval(() => {
     const activities:ActivitiesOptions[] = [{name : "with pomodoro timers", type:"PLAYING"}, {name:"you study", type:"WATCHING"}, {name:`over ${client.guilds.cache.size} servers`, type:"WATCHING"}]

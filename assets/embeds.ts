@@ -17,5 +17,9 @@ export const Embeds = {
     INVALID_USER: new MessageEmbed()
         .setTitle("Invalid user")
         .setColor(Colors.error)
-        .setDescription("This is not your interaction. Please run the appropriate command yourself.")
+        .setDescription("This is not your interaction. Please run the appropriate command yourself."),
+    SERVER_ONLY: new MessageEmbed()
+        .setTitle("Server only command")
+        .setColor(Colors.error)
+        .setDescription("Sorry, but this command is only available in a server")
 }
