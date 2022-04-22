@@ -9,7 +9,7 @@ export const Embeds = {
     UNKNOWN_COMMAND:new MessageEmbed()
         .setTitle("Unknown command")
         .setColor(Colors.error)
-        .setDescription("Somehow you managed to send in an unknown command and studybot didn't know how to respond. Interesting."),
+        .setDescription("Somehow you managed to send in an unknown command and vyne didn't know how to respond. Interesting."),
     EXPIRED_COMPONENT: new MessageEmbed()
         .setTitle("Expired interaction")
         .setColor(Colors.error)

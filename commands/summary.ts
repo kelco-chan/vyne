@@ -12,7 +12,7 @@ export default new Command()
             await interaction.reply({embeds: [Embeds.SERVER_ONLY]});
             return false;
         }
-        let scope = <"server" | "personal"> interaction.options.getString("scope", true);
+        let scope = <"server" | "personal">interaction.options.getSubcommand();
         let durationString = <"day" | "week" | "month" | null> interaction.options.getString("time");
         let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
         let afterDate = durationString === null ? new Date(1) : new Date(Date.now() - duration)
@@ -63,27 +63,34 @@ export default new Command()
         await interaction.reply({embeds: [
             new MessageEmbed()
                 .setColor(Colors.success)
-                .setTitle(`Stats for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
-                .setDescription(`filtering all activity in the last ${durationString}`)
-                .addField("Sessions completed", sessionsCompleted + "", true)
-                .addField("Time studied", `${Math.floor(timeCompleted / 60_000)} minutes`, true)
-                .addField("Tasks completed", `${tasksCompleted}`, true)
+                .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
+                .setDescription(durationString === null ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
+                .addField("`📅` Sessions", sessionsCompleted + " sessions completed in total")
+                .addField("`⏰` Time studied", `${Math.floor(timeCompleted / 60_000)} minutes studied in total`)
+                .addField("`✅` Tasks", `${tasksCompleted} tasks completed in total`)
         ]})
         return false;
     })
-    .addStringOption(option => option
-        .setName("scope")
-        .setDescription("whom you want the get the stats of")
-        .setChoices([
-            ["server", "server"],
-            ["personal", "personal"]
-        ])
-        .setRequired(true))
-    .addStringOption(option => option
-        .setName("time")
-        .setDescription("The time period that the stats shoudl be on")
-        .setChoices([
-            ["last 24hrs", "day"],
-            ["last week", "week"],
-            ["last month", "month"]
-        ]))
+    .addSubcommand(subcmd => subcmd
+        .setName("personal")
+        .setDescription("View your own studying stats")
+        .addStringOption(option => option
+            .setName("time")
+            .setDescription("The time period that the stats shoudl be on")
+            .setChoices([
+                ["last 24hrs", "day"],
+                ["last week", "week"],
+                ["last month", "month"]
+            ])))
+    .addSubcommand(subcmd => subcmd
+        .setName("server")
+        .setDescription("View the studying statistics of the current server")
+        .addStringOption(option => option
+            .setName("time")
+            .setDescription("The time period that the stats shoudl be on")
+            .setChoices([
+                ["last 24hrs", "day"],
+                ["last week", "week"],
+                ["last month", "month"]
+            ])))
+    

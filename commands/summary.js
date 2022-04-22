@@ -16,7 +16,7 @@ exports.default = new Command_1.Command()
         await interaction.reply({ embeds: [embeds_1.Embeds.SERVER_ONLY] });
         return false;
     }
-    let scope = interaction.options.getString("scope", true);
+    let scope = interaction.options.getSubcommand();
     let durationString = interaction.options.getString("time");
     let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
     let afterDate = durationString === null ? new Date(1) : new Date(Date.now() - duration);
@@ -68,22 +68,17 @@ exports.default = new Command_1.Command()
     await interaction.reply({ embeds: [
             new discord_js_1.MessageEmbed()
                 .setColor(colors_1.Colors.success)
-                .setTitle(`Stats for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
-                .setDescription(`filtering all activity in the last ${durationString}`)
-                .addField("Sessions completed", sessionsCompleted + "", true)
-                .addField("Time studied", `${Math.floor(timeCompleted / 60000)} minutes`, true)
-                .addField("Tasks completed", `${tasksCompleted}`, true)
+                .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
+                .setDescription(durationString === null ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
+                .addField("`📅` Sessions", sessionsCompleted + " sessions completed in total")
+                .addField("`⏰` Time studied", `${Math.floor(timeCompleted / 60000)} minutes studied in total`)
+                .addField("`✅` Tasks", `${tasksCompleted} tasks completed in total`)
         ] });
     return false;
 })
-    .addStringOption(option => option
-    .setName("scope")
-    .setDescription("whom you want the get the stats of")
-    .setChoices([
-    ["server", "server"],
-    ["personal", "personal"]
-])
-    .setRequired(true))
+    .addSubcommand(subcmd => subcmd
+    .setName("personal")
+    .setDescription("View your own studying stats")
     .addStringOption(option => option
     .setName("time")
     .setDescription("The time period that the stats shoudl be on")
@@ -91,5 +86,16 @@ exports.default = new Command_1.Command()
     ["last 24hrs", "day"],
     ["last week", "week"],
     ["last month", "month"]
-]));
+])))
+    .addSubcommand(subcmd => subcmd
+    .setName("server")
+    .setDescription("View the studying statistics of the current server")
+    .addStringOption(option => option
+    .setName("time")
+    .setDescription("The time period that the stats shoudl be on")
+    .setChoices([
+    ["last 24hrs", "day"],
+    ["last week", "week"],
+    ["last month", "month"]
+])));
 //# sourceMappingURL=summary.js.map

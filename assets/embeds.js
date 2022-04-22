@@ -11,7 +11,7 @@ exports.Embeds = {
     UNKNOWN_COMMAND: new discord_js_1.MessageEmbed()
         .setTitle("Unknown command")
         .setColor(colors_1.Colors.error)
-        .setDescription("Somehow you managed to send in an unknown command and studybot didn't know how to respond. Interesting."),
+        .setDescription("Somehow you managed to send in an unknown command and vyne didn't know how to respond. Interesting."),
     EXPIRED_COMPONENT: new discord_js_1.MessageEmbed()
         .setTitle("Expired interaction")
         .setColor(colors_1.Colors.error)
