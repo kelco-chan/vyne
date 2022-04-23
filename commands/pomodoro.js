@@ -131,13 +131,25 @@ exports.default = new Command_1.Command()
             sessionId: data.sessionId
         }
     });
-    await interaction.reply({ embeds: [
+    await interaction.reply({ ephemeral: true, embeds: [
             new discord_js_1.MessageEmbed()
                 .setTitle("Task saved")
                 .setColor(colors_1.Colors.success)
                 .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
-                .setFooter(`Session ID: ${data.sessionId}`)
+                .setFooter({ text: `Session ID: ${data.sessionId}`, iconURL: interaction.user.defaultAvatarURL })
         ] });
+    return true;
+})
+    .addButtonHandler(async (interaction, { data }) => {
+    if (data.cmd !== "update_pomodoro_embed_status")
+        return;
+    let session = Pomodoro_1.Pomodoro.active.find(session => session.id === data.sessionId);
+    if (!session) {
+        await interaction.update({ embeds: [embeds_1.Embeds.EXPIRED_COMPONENT] });
+        return false;
+    }
+    session.update();
+    await interaction.update(session.getStatusPayload());
     return true;
 })
     .addSubcommand(subcmd => subcmd

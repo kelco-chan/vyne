@@ -63,7 +63,7 @@ setInterval(() => {
     let time = Date.now();
     let numberCleared = 0;
     for(let [key, value] of entryCache){
-        if(value.expires > time){
+        if(value.expires <= time){
             entryCache.delete(key);
             numberCleared += 1;
         }

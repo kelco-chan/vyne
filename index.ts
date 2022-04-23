@@ -1,21 +1,17 @@
 import {ActivitiesOptions, Activity, Client, Intents, Interaction, Message, MessageEmbed, TextChannel} from "discord.js";
 import { Command } from "./lib/Command";
-import { Colors } from "./assets/colors";
 import { DISCORD_TOKEN } from "./assets/config";
-import { PrismaClient } from "@prisma/client";
 import { Embeds } from "./assets/embeds";
 import { resolveEntry } from "./lib/InteractionCache";
 import discordModals from "discord-modals";
 import prisma from "./lib/prisma";
 import { Pomodoro } from "./lib/Pomodoro";
 import PausableTimer from "./lib/PausableTimer";
-import { time } from "@discordjs/builders";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 
 discordModals(client);
 
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
-prisma.$connect();
 client.once("ready", () => {
     console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });
@@ -110,18 +106,18 @@ client.on("modalSubmit", async interaction => {
 })
 client.on("voiceStateUpdate", (oldState, newState) => {
     let member = oldState.member;
-    if(!member || member.user.bot) return;
+    if(newState?.member?.user?.bot || oldState?.member?.user?.bot) return;
     let oldSession = Pomodoro.active.find(session => session.vcId === oldState.channelId);
     let newSession = Pomodoro.active.find(session => session.vcId === newState.channelId);
-    if(oldSession){
-        let timer = oldSession.userTimers.get(member.user.id);
+    if(oldSession && oldState.member){
+        let timer = oldSession.userTimers.get(oldState.member.user.id);
         timer && timer.pause();
     }
-    if(newSession){
-        let timer = newSession.userTimers.get(member.user.id);
+    if(newSession && newState.member){
+        let timer = newSession.userTimers.get(newState.member.user.id);
         if(!timer){
             timer = new PausableTimer();
-            newSession.userTimers.set(member.user.id, timer);
+            newSession.userTimers.set(newState.member.user.id, timer);
         }
         if(newSession.paused){
             timer.pause();

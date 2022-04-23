@@ -16,6 +16,7 @@ exports.default = new Command_1.Command()
         await interaction.reply({ embeds: [embeds_1.Embeds.SERVER_ONLY] });
         return false;
     }
+    await interaction.deferReply();
     let scope = interaction.options.getSubcommand();
     let durationString = interaction.options.getString("time");
     let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
@@ -65,7 +66,7 @@ exports.default = new Command_1.Command()
             }
         })).tasksCompleted;
     }
-    await interaction.reply({ embeds: [
+    await interaction.editReply({ embeds: [
             new discord_js_1.MessageEmbed()
                 .setColor(colors_1.Colors.success)
                 .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)

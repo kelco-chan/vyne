@@ -21,5 +21,9 @@ export const Embeds = {
     SERVER_ONLY: new MessageEmbed()
         .setTitle("Server only command")
         .setColor(Colors.error)
-        .setDescription("Sorry, but this command is only available in a server")
+        .setDescription("Sorry, but this command is only available in a server"),
+    EXPIRED_SESSION: new MessageEmbed()
+        .setTitle("Expired session")
+        .setColor(Colors.error)
+        .setDescription("The session which you tried to query has expired. Be faster next time."),
 }

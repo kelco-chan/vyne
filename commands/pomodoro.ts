@@ -3,7 +3,7 @@ import { InteractionReplyOptions, Message, MessageActionRow, MessageEmbed } from
 import { Colors } from "../assets/colors";
 import { Embeds } from "../assets/embeds";
 import { Command } from "../lib/Command";
-import { cache } from "../lib/InteractionCache";
+import { cache, resolveEntry } from "../lib/InteractionCache";
 import { Pomodoro } from "../lib/Pomodoro";
 import prisma from "../lib/prisma";
 
@@ -121,13 +121,24 @@ export default new Command()
                 sessionId: data.sessionId
             }
         })
-        await interaction.reply({embeds:[
+        await interaction.reply({ephemeral: true, embeds:[
             new MessageEmbed()
                 .setTitle("Task saved")
                 .setColor(Colors.success)
                 .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
-                .setFooter(`Session ID: ${data.sessionId}`)
+                .setFooter({text:`Session ID: ${data.sessionId}`, iconURL:interaction.user.defaultAvatarURL})
         ]})
+        return true;
+    })
+    .addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
+        if(data.cmd !== "update_pomodoro_embed_status") return;
+        let session = Pomodoro.active.find(session => session.id === data.sessionId);
+        if(!session){
+            await interaction.update({embeds:[Embeds.EXPIRED_COMPONENT]})
+            return false;
+        }
+        session.update();
+        await interaction.update(session.getStatusPayload());
         return true;
     })
     .addSubcommand(subcmd => subcmd

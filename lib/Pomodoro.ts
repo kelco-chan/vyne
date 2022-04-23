@@ -182,7 +182,7 @@ export class Pomodoro{
     /**
      * Updates the status of the current pomodoro
      */
-    update(){
+    async update(){
         if(this.paused){
             this.lastUpdateTime = Date.now();
             return;
@@ -199,7 +199,7 @@ export class Pomodoro{
         }
         this.lastUpdateTime = Date.now();
         //stagger the db updates so uyou dont have a billion db writes in 1 second
-        setTimeout(() => this.upsertParticipantStates(), SESSION_DURATION / 20 * Math.random())
+        this.upsertParticipantStates()
         
     }
     /**
@@ -225,7 +225,9 @@ export class Pomodoro{
                     }},
                     timeCompleted: timer.elapsed
                 }
-            })
+            });
+            await new Promise(res => setTimeout(res, 1000));
+            console.log("Updated 1 session participant")
         }
     }
     /**
@@ -287,6 +289,28 @@ export class Pomodoro{
                     .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros!")]
             }
         }
+        let buttons = [
+            new MessageButton()
+                .setLabel("Update status")
+                .setStyle("SECONDARY")
+                .setCustomId(cache({
+                    cmd: "update_pomodoro_embed_status",
+                    sessionId: this.id
+                }, {users:["all"]}))
+                .setEmoji("🔁")
+        ]
+        if(status.type === "BREAK"){
+            buttons.push(
+                new MessageButton()
+                .setLabel("Hold yourself accountable")
+                .setStyle("SECONDARY")
+                .setCustomId(cache({
+                    cmd:"prompt_completed_task",
+                    sessionId: this.id
+                }, {users:["all"]}))
+                .setEmoji("📢")
+            )
+        }
         return {
             embeds:[
                 new MessageEmbed()
@@ -301,15 +325,8 @@ export class Pomodoro{
                     .setFooter({text:`Status last updated on ${new Date().toLocaleTimeString("en-US")}`, iconURL: (this.interaction.client.user?.avatarURL() || "")})
                     .setColor(Colors.success)
             ],
-            components: (status.type === "WORK") ? [] : [new MessageActionRow().addComponents(
-                new MessageButton()
-                    .setLabel("Hold yourself accountable")
-                    .setStyle("SECONDARY")
-                    .setCustomId(cache({
-                        cmd:"prompt_completed_task",
-                        sessionId: this.id
-                    }, {users:["all"]}))
-                    .setEmoji("📢")
+            components: [new MessageActionRow().addComponents(
+                ...buttons
             )]
         }
     }

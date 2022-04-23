@@ -9,13 +9,11 @@ const config_1 = require("./assets/config");
 const embeds_1 = require("./assets/embeds");
 const InteractionCache_1 = require("./lib/InteractionCache");
 const discord_modals_1 = __importDefault(require("discord-modals"));
-const prisma_1 = __importDefault(require("./lib/prisma"));
 const Pomodoro_1 = require("./lib/Pomodoro");
 const PausableTimer_1 = __importDefault(require("./lib/PausableTimer"));
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 (0, discord_modals_1.default)(client);
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
-prisma_1.default.$connect();
 client.once("ready", () => {
     console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });
@@ -133,19 +131,19 @@ client.on("modalSubmit", async (interaction) => {
 });
 client.on("voiceStateUpdate", (oldState, newState) => {
     let member = oldState.member;
-    if (!member || member.user.bot)
+    if (newState?.member?.user?.bot || oldState?.member?.user?.bot)
         return;
     let oldSession = Pomodoro_1.Pomodoro.active.find(session => session.vcId === oldState.channelId);
     let newSession = Pomodoro_1.Pomodoro.active.find(session => session.vcId === newState.channelId);
-    if (oldSession) {
-        let timer = oldSession.userTimers.get(member.user.id);
+    if (oldSession && oldState.member) {
+        let timer = oldSession.userTimers.get(oldState.member.user.id);
         timer && timer.pause();
     }
-    if (newSession) {
-        let timer = newSession.userTimers.get(member.user.id);
+    if (newSession && newState.member) {
+        let timer = newSession.userTimers.get(newState.member.user.id);
         if (!timer) {
             timer = new PausableTimer_1.default();
-            newSession.userTimers.set(member.user.id, timer);
+            newSession.userTimers.set(newState.member.user.id, timer);
         }
         if (newSession.paused) {
             timer.pause();

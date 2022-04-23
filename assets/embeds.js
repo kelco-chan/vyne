@@ -23,6 +23,10 @@ exports.Embeds = {
     SERVER_ONLY: new discord_js_1.MessageEmbed()
         .setTitle("Server only command")
         .setColor(colors_1.Colors.error)
-        .setDescription("Sorry, but this command is only available in a server")
+        .setDescription("Sorry, but this command is only available in a server"),
+    EXPIRED_SESSION: new discord_js_1.MessageEmbed()
+        .setTitle("Expired session")
+        .setColor(colors_1.Colors.error)
+        .setDescription("The session which you tried to query has expired. Be faster next time."),
 };
 //# sourceMappingURL=embeds.js.map

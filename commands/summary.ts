@@ -12,6 +12,7 @@ export default new Command()
             await interaction.reply({embeds: [Embeds.SERVER_ONLY]});
             return false;
         }
+        await interaction.deferReply();
         let scope = <"server" | "personal">interaction.options.getSubcommand();
         let durationString = <"day" | "week" | "month" | null> interaction.options.getString("time");
         let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
@@ -60,7 +61,7 @@ export default new Command()
                 }
             })).tasksCompleted
         }
-        await interaction.reply({embeds: [
+        await interaction.editReply({embeds: [
             new MessageEmbed()
                 .setColor(Colors.success)
                 .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
