@@ -59,7 +59,7 @@ export class Command extends SlashCommandBuilder{
             if(cmd instanceof Command){
                 commands.push(cmd);
             }else{
-                console.error(`${fileName} does not export a valid command. If it is not a command, please move it outside of the commands directory in the future.`)
+                console.warn(`${fileName} does not export a valid command. If it is not a command, please move it outside of the commands directory in the future.`)
             }
         }
         commands = commands.sort((cmd1,cmd2)=>cmd1.name.localeCompare(cmd2.name));

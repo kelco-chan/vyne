@@ -7,6 +7,9 @@ import { cache } from "./InteractionCache";
 import { nanoid } from "nanoid";
 import prisma from "./prisma";
 import PausableTimer from "./PausableTimer";
+import debug from "debug";
+const log = debug("pomodoro");
+
 type PomodoroStatus = {
     /**
      * The current section that the session is in
@@ -96,7 +99,7 @@ export class Pomodoro{
         this.audioPlayer = createAudioPlayer();
         this.connection.subscribe(this.audioPlayer);
         activePomodoros.push(this);
-        console.log(`Created 1 session, ${activePomodoros.length} active`);
+        log(`create session: ${activePomodoros.length} active`);
     }
     /**
      * Inits the pomodoro session
@@ -227,7 +230,6 @@ export class Pomodoro{
                 }
             });
             await new Promise(res => setTimeout(res, 1000));
-            console.log("Updated 1 session participant")
         }
     }
     /**
@@ -346,7 +348,7 @@ export class Pomodoro{
                 data:{ ended: new Date() }
             });
             await this.upsertParticipantStates();
-            console.log(`Destroyed 1 session, ${activePomodoros.length} remain`);
+            log(`destroy session: ${activePomodoros.length} remain`);
         })() 
     }
     /**
@@ -365,7 +367,7 @@ export class Pomodoro{
      * Batch updates all pomodoro sessions. See `Pomodoro#update` for more information
      */
     static async updateAll(){
-        console.log(`Batch updating ${activePomodoros.length} sessions`)
+        log(`batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
             if(pomo.paused) continue;
             await pomo.update();
