@@ -7,6 +7,7 @@ import discordModals from "discord-modals";
 import prisma from "./lib/prisma";
 import { Pomodoro } from "./lib/Pomodoro";
 import PausableTimer from "./lib/PausableTimer";
+import { reject } from "./lib/errorHandling";
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 
 discordModals(client);
@@ -17,14 +18,14 @@ client.once("ready", () => {
 });
 //handler for commands
 client.on("interactionCreate", async interaction => {
+    let timeStarted = Date.now();
     if(!interaction.isCommand()) return;
     for(let command of Command.loaded){
         if(!command.matches(interaction)) continue;
         try{
             let succeeded = await command.handler(interaction);
         }catch(e){
-            console.error(e);
-            await interaction.reply({embeds:[Embeds.UNKNOWN_ERROR]})
+            reject(interaction, e as Error, timeStarted);
         }
     }
     if(!interaction.replied){
@@ -33,6 +34,7 @@ client.on("interactionCreate", async interaction => {
 });
 //handler for buttons
 client.on("interactionCreate", async interaction => {
+    let timeStarted = Date.now();
     if(!interaction.isButton()) return;
     let entry = resolveEntry(interaction);
     if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
@@ -51,13 +53,13 @@ client.on("interactionCreate", async interaction => {
             }
         }
     }catch(e){
-        console.error(e)
-        await interaction.reply({embeds:[Embeds.UNKNOWN_ERROR]});
+        reject(interaction, e as Error, timeStarted);
     }
     if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 });
 //handler for select menus
 client.on("interactionCreate", async interaction => {
+    let timeStarted = Date.now();
     if(!interaction.isSelectMenu()) return;
     let entry = resolveEntry(interaction);
     if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
@@ -76,12 +78,12 @@ client.on("interactionCreate", async interaction => {
             }
         }
     }catch(e){
-        console.error(e)
-        await interaction.reply({embeds:[Embeds.UNKNOWN_ERROR]});
+        reject(interaction, e as Error, timeStarted)
     }
     if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 });
 client.on("modalSubmit", async interaction => {
+    let timeStarted = Date.now();
     let entry = resolveEntry(interaction);
     if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
     if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
@@ -99,8 +101,7 @@ client.on("modalSubmit", async interaction => {
             }
         }
     }catch(e){
-        console.error(e)
-        await interaction.reply({embeds:[Embeds.UNKNOWN_ERROR]});
+        reject(interaction, e as Error, timeStarted);
     }
     if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 })

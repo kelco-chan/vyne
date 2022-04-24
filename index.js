@@ -11,6 +11,7 @@ const InteractionCache_1 = require("./lib/InteractionCache");
 const discord_modals_1 = __importDefault(require("discord-modals"));
 const Pomodoro_1 = require("./lib/Pomodoro");
 const PausableTimer_1 = __importDefault(require("./lib/PausableTimer"));
+const errorHandling_1 = require("./lib/errorHandling");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 (0, discord_modals_1.default)(client);
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
@@ -19,6 +20,7 @@ client.once("ready", () => {
 });
 //handler for commands
 client.on("interactionCreate", async (interaction) => {
+    let timeStarted = Date.now();
     if (!interaction.isCommand())
         return;
     for (let command of Command_1.Command.loaded) {
@@ -28,8 +30,7 @@ client.on("interactionCreate", async (interaction) => {
             let succeeded = await command.handler(interaction);
         }
         catch (e) {
-            console.error(e);
-            await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_ERROR] });
+            (0, errorHandling_1.reject)(interaction, e, timeStarted);
         }
     }
     if (!interaction.replied) {
@@ -38,6 +39,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 //handler for buttons
 client.on("interactionCreate", async (interaction) => {
+    let timeStarted = Date.now();
     if (!interaction.isButton())
         return;
     let entry = (0, InteractionCache_1.resolveEntry)(interaction);
@@ -62,14 +64,14 @@ client.on("interactionCreate", async (interaction) => {
         }
     }
     catch (e) {
-        console.error(e);
-        await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_ERROR] });
+        (0, errorHandling_1.reject)(interaction, e, timeStarted);
     }
     if (!interaction.replied)
         await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_COMMAND] });
 });
 //handler for select menus
 client.on("interactionCreate", async (interaction) => {
+    let timeStarted = Date.now();
     if (!interaction.isSelectMenu())
         return;
     let entry = (0, InteractionCache_1.resolveEntry)(interaction);
@@ -94,13 +96,13 @@ client.on("interactionCreate", async (interaction) => {
         }
     }
     catch (e) {
-        console.error(e);
-        await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_ERROR] });
+        (0, errorHandling_1.reject)(interaction, e, timeStarted);
     }
     if (!interaction.replied)
         await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_COMMAND] });
 });
 client.on("modalSubmit", async (interaction) => {
+    let timeStarted = Date.now();
     let entry = (0, InteractionCache_1.resolveEntry)(interaction);
     if (!entry)
         return await interaction.reply({ embeds: [embeds_1.Embeds.EXPIRED_COMPONENT], ephemeral: true });
@@ -123,8 +125,7 @@ client.on("modalSubmit", async (interaction) => {
         }
     }
     catch (e) {
-        console.error(e);
-        await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_ERROR] });
+        (0, errorHandling_1.reject)(interaction, e, timeStarted);
     }
     if (!interaction.replied)
         await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_COMMAND] });
