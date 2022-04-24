@@ -18,17 +18,17 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "type": "pwa-node",
+            "name": "Launch Program for Production",
+            "program": "${workspaceFolder}/index.ts",
             "request": "launch",
-            "name": "db-test",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/scripts/dbtest.ts",
+            "type": "node",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.prod.env"
         },
         {
             "name": "Update dev commands",
