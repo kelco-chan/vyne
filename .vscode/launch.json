@@ -11,7 +11,20 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\index.ts",
+            "program": "${workspaceFolder}/index.ts",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "db-test",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/scripts/dbtest.ts",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ],

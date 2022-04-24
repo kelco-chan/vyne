@@ -1,18 +1,18 @@
-import { Message, MessageEmbed } from "discord.js";
+import { Modal, showModal, TextInputComponent } from "discord-modals";
+import { InteractionReplyOptions, Message, MessageActionRow, MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
+import { Embeds } from "../assets/embeds";
 import { Command } from "../lib/Command";
+import { cache, resolveEntry } from "../lib/InteractionCache";
 import { Pomodoro } from "../lib/Pomodoro";
+import prisma from "../lib/prisma";
 
 export default new Command()
     .setName("pomo")
     .setDescription("Commands for setting up a pomodoro timer")
     .setHandler(async (interaction) => {
         if(!interaction.member || !interaction.inCachedGuild()){
-            await interaction.reply({embeds:[new MessageEmbed()
-                .setTitle("Server only command")
-                .setColor(Colors.error)
-                .setDescription("Sorry, but pomodoro timers are only available in a server")
-            ]});
+            await interaction.reply({embeds:[Embeds.SERVER_ONLY]});
             return false;
         }
         let vcId = interaction.member.voice.channelId;
@@ -37,7 +37,7 @@ export default new Command()
                 return false;
             }
             let pomo = new Pomodoro(vcId, interaction, interaction.guild);
-            await pomo.initVoice();
+            pomo.init();
             await interaction.reply({content:"Started pomodoro session", ephemeral: true})
             await pomo.displayUpdate();
             return true;
@@ -60,31 +60,86 @@ export default new Command()
                 ]});
                 return false;
             }
-            let embed:MessageEmbed;
+            let payload = currentSession.getStatusPayload() as {embeds: MessageEmbed[], components: MessageActionRow[]};
             //force an update
             if(subcmd === "status"){    
                 currentSession.update();
-                embed = currentSession.getStatusEmbed();
             }else if(subcmd === "pause"){
                 currentSession.pause();
-                embed = currentSession.getStatusEmbed().setTitle("Session paused");
+                payload.embeds[0]?.setTitle("Session paused");
             }else if(subcmd === "resume"){
                 currentSession.resume();
-                embed = currentSession.getStatusEmbed().setTitle("Session resumed");
+                payload.embeds[0]?.setTitle("Session resumed");
             }else if(subcmd === "stop"){
                 currentSession.destroy();
-                embed = new MessageEmbed()
+                payload.embeds[0] = new MessageEmbed()
                     .setTitle("Session stopped")
                     .setColor(Colors.error)
                     .setDescription(`The session in <#${vcId}> has been successfully stopped.`)
             }else{
                 throw new Error("unreachable code");
             }
-            await interaction.reply({embeds:[embed]});
+            await interaction.reply(payload);
             return true;
         }else{
             throw new Error(`Unknown subcommand ${interaction.options.getSubcommand()}`)
         }
+    })
+    .addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
+        if(data.cmd !== "prompt_completed_task") return;
+        let modal = new Modal()
+            .setTitle("Task Completion Check")
+            .setCustomId(cache({cmd:"submit_completed_task", sessionId:data.sessionId}, {users:[interaction.user.id], duration:3 * 60_000}))
+            .addComponents(
+                new TextInputComponent()
+                    .setLabel("What task did you just complete?")
+                    .setPlaceholder("All of the devious english homework")
+                    .setStyle("SHORT")
+                    .setRequired(true)
+                    .setCustomId("task")
+            )
+        await showModal(modal, {client: interaction.client, interaction});
+        interaction.replied = true;
+        return true
+    })
+    .addModalHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
+        if(data.cmd !== "submit_completed_task") return;
+        let task = interaction.getTextInputValue("task");
+        await prisma.sessionParticipant.upsert({
+            where:{ userId_sessionId:{
+                userId: interaction.user.id,
+                sessionId: data.sessionId
+            }},
+            update:{
+                tasksCompleted: {
+                    push: task
+                }
+            },
+            create:{
+                timeCompleted: 0,
+                userId: interaction.user.id,
+                sessionId: data.sessionId
+            }
+        })
+        await interaction.reply({ephemeral: true, embeds:[
+            new MessageEmbed()
+                .setTitle("Task saved")
+                .setColor(Colors.success)
+                .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
+                .setFooter({text:`Session ID: ${data.sessionId}`, iconURL:interaction.user.defaultAvatarURL})
+        ]})
+        return true;
+    })
+    .addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
+        if(data.cmd !== "update_pomodoro_embed_status") return;
+        let session = Pomodoro.active.find(session => session.id === data.sessionId);
+        if(!session){
+            await interaction.update({embeds:[Embeds.EXPIRED_COMPONENT]})
+            return false;
+        }
+        session.update();
+        await interaction.update(session.getStatusPayload());
+        return true;
     })
     .addSubcommand(subcmd => subcmd
         .setName("start")

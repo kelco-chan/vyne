@@ -1,4 +1,4 @@
-# StudyBot
+# Vyne
 ## Description
 A simple slash command bot for group studying in servers. Currently only supports pomodoro timers, more features to come :D
 ## Invite link

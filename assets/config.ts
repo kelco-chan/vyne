@@ -10,3 +10,5 @@ export const GLOBAL_TIMER_SWEEP_INTERVAL = SESSION_DURATION / 6;
  * Maximum allowed error in pomodoro alert timing in MS
  */
 export const MAX_TIMER_ALLOWED_ERROR = 100;
+export const CUSTOMID_SWEEP_INTERVAL = 40_000;
+export const CUSTOMID_CACHE_DEFAULT_LIFETIME = 10 * 60_000;

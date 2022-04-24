@@ -1,8 +1,15 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import {  CommandInteraction, Guild, Message, MessageEmbed } from "discord.js";
+import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel } from "discord.js";
 import { Colors } from "../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../assets/config";
 import { stripIndents } from "common-tags"
+import { cache } from "./InteractionCache";
+import { nanoid } from "nanoid";
+import prisma from "./prisma";
+import PausableTimer from "./PausableTimer";
+import debug from "debug";
+const log = debug("pomodoro");
+
 type PomodoroStatus = {
     /**
      * The current section that the session is in
@@ -26,6 +33,10 @@ let activePomodoros:Pomodoro[] = [];
  * A data structure representing a pomodoro session
  */
 export class Pomodoro{
+    /**
+     * ID of this pomodoro session
+     */
+    id: string;
     /**
      * Number of milliseconds completed in this pomodoro session
      */
@@ -63,13 +74,19 @@ export class Pomodoro{
      */
     lastMessageUpdate?: Message;
     /**
+     * List of timers to track the time spent by each individual user;
+     */
+    userTimers: Map<string, PausableTimer>
+    /**
      * Constructor of the pomodoro class
      * @param vcId ID of the vc in which this pomodoro belongs
      * @param interacion The interaction taht initiated this pomodoro session
      * @param guild Guild in which this pomodoro belongs
      */
     constructor(vcId: string, interaction: CommandInteraction, guild:Guild){
+        this.id = nanoid();
         this.timeCompleted = 0;
+        this.userTimers = new Map();
         this.lastUpdateTime = Date.now();
         this.paused = false;
         this.interaction = interaction;
@@ -82,14 +99,40 @@ export class Pomodoro{
         this.audioPlayer = createAudioPlayer();
         this.connection.subscribe(this.audioPlayer);
         activePomodoros.push(this);
-        console.log(`Created 1 session, ${activePomodoros.length} active`);
+        log(`create session: ${activePomodoros.length} active`);
     }
     /**
-     * Initialises voice connections
+     * Inits the pomodoro session
      */
-    async initVoice(){
+    async init(){
         this.playAlarm();
         this.connection.on(VoiceConnectionStatus.Disconnected, () => this.abort());
+        let members = await this.getCurrentMembers();
+        await prisma.session.create({
+            data:{
+                id: this.id,
+                started: new Date(),
+                guild:{
+                    connectOrCreate: {
+                        where:{id: this.interaction.guildId as string},
+                        create:{id: this.interaction.guildId as string}
+                    }
+                },
+                vcId: this.vcId,
+                participants:{
+                    create:members.map(member => ({
+                        user: {connectOrCreate: {
+                            where: {id: member.user.id},
+                            create:{id: member.user.id, joined: new Date()}
+                        }},
+                        timeCompleted: 0
+                    }))
+                }
+            }
+        });
+        for(const member of members){
+            this.userTimers.set(member.user.id, new PausableTimer());
+        }
     }
     /**
      * Pauses the pomodoro session
@@ -100,6 +143,9 @@ export class Pomodoro{
         if(this.timeout){
             clearTimeout(this.timeout);
         }
+        for(let [_, timer] of this.userTimers){
+            timer.pause();
+        }
     }
     /**
      * Resumes the pomodoro session
@@ -108,6 +154,9 @@ export class Pomodoro{
         this.paused = false;
         this.lastUpdateTime = Date.now();
         this.update();
+        for(let [_, timer] of this.userTimers){
+            timer.resume();
+        }
     }
     /**
      * Schedules a callback to be triggered in the future, similar to `setTimeout()`
@@ -136,7 +185,7 @@ export class Pomodoro{
     /**
      * Updates the status of the current pomodoro
      */
-    update(){
+    async update(){
         if(this.paused){
             this.lastUpdateTime = Date.now();
             return;
@@ -145,12 +194,43 @@ export class Pomodoro{
         let status = this.getStatus();
         if((status.cycle === 4 && status.type === "BREAK") || status.cycle > 4){
             this.destroy();
+            return;
         }else if(status.timeRemaining < GLOBAL_TIMER_SWEEP_INTERVAL){
             if(!this.timeout){
                 this.schedule(() => {this.update(); this.displayUpdate(true)}, status.timeRemaining - MAX_TIMER_ALLOWED_ERROR);
             }
         }
         this.lastUpdateTime = Date.now();
+        //stagger the db updates so uyou dont have a billion db writes in 1 second
+        this.upsertParticipantStates()
+        
+    }
+    /**
+     * Upsert the states of all participants
+     */
+    async upsertParticipantStates(){
+        for(let [userId, timer] of this.userTimers){
+            await prisma.sessionParticipant.upsert({
+                where:{ userId_sessionId:{
+                    userId: userId,
+                    sessionId: this.id
+                }},
+                update:{
+                    timeCompleted: timer.elapsed
+                },
+                create:{
+                    user: {connectOrCreate:{
+                        where:{id: userId},
+                        create: {id: userId}
+                    }},
+                    session: {connect:{
+                        id: this.id
+                    }},
+                    timeCompleted: timer.elapsed
+                }
+            });
+            await new Promise(res => setTimeout(res, 1000));
+        }
     }
     /**
      * Renders and updated to the end user;
@@ -160,7 +240,7 @@ export class Pomodoro{
         if(!this.interaction.replied) return; //no updates needed if no session initialised yet
         if(playAlarm) this.playAlarm();
         //fetch the embed at a later time, just in case things go wrong
-        let payload = {embeds:[this.getStatusEmbed(MAX_TIMER_ALLOWED_ERROR)]};
+        let payload = this.getStatusPayload(MAX_TIMER_ALLOWED_ERROR)
         //this.interaction.editReply(payload);    
         if(this.lastMessageUpdate){
             this.lastMessageUpdate.delete();
@@ -199,40 +279,77 @@ export class Pomodoro{
      * @param seekAhead Amount of milliseconds to look into the future. E.g. if `seekAhead` is set to 100ms, this will return the status embed at time Date.now() + 100ms
      * @returns Message embed description of the current pomodoro status
      */
-    getStatusEmbed(seekAhead?: number): MessageEmbed{
+    getStatusPayload(seekAhead?: number): InteractionReplyOptions{
         let status = this.getStatus(seekAhead);
         let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
         let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
         if(status.type === "BREAK" && status.cycle === 4){
-            return new MessageEmbed()
-                .setTitle("Session finished")
-                .setColor(Colors.success)
-                .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros!")
+            return {
+                embeds:[new MessageEmbed()
+                    .setTitle("Session finished")
+                    .setColor(Colors.success)
+                    .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros!")]
+            }
         }
-        return new MessageEmbed()
-            .setTitle(status.type === "WORK" ? "Working ..." : "Taking a break ...")
-            .setDescription(stripIndents`\`\`\`less
-                ${message}
-                [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
-                \`\`\``)
-            .addField("Cycle", `${status.cycle}/4`, true)
-            .addField("Elapsed", `${Math.round(status.timeElapsed/60000)}m`, true)
-            .addField("Remaining", `${Math.round(status.timeRemaining/60000)}m`, true)
-            .setFooter({text:`Status last updated on ${new Date().toLocaleTimeString("en-US")}`, iconURL: (this.interaction.client.user?.avatarURL() || "")})
-            .setColor(Colors.success)
+        let buttons = [
+            new MessageButton()
+                .setLabel("Update status")
+                .setStyle("SECONDARY")
+                .setCustomId(cache({
+                    cmd: "update_pomodoro_embed_status",
+                    sessionId: this.id
+                }, {users:["all"]}))
+                .setEmoji("🔁")
+        ]
+        if(status.type === "BREAK"){
+            buttons.push(
+                new MessageButton()
+                .setLabel("Hold yourself accountable")
+                .setStyle("SECONDARY")
+                .setCustomId(cache({
+                    cmd:"prompt_completed_task",
+                    sessionId: this.id
+                }, {users:["all"]}))
+                .setEmoji("📢")
+            )
+        }
+        return {
+            embeds:[
+                new MessageEmbed()
+                    .setTitle(status.type === "WORK" ? "Working ..." : "Taking a break ...")
+                    .setDescription(stripIndents`\`\`\`less
+                        ${message}
+                        [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
+                        \`\`\``)
+                    .addField("Cycle", `${status.cycle}/4`, true)
+                    .addField("Elapsed", `${Math.round(status.timeElapsed/60000)}m`, true)
+                    .addField("Remaining", `${Math.round(status.timeRemaining/60000)}m`, true)
+                    .setFooter({text:`Status last updated on ${new Date().toLocaleTimeString("en-US")}`, iconURL: (this.interaction.client.user?.avatarURL() || "")})
+                    .setColor(Colors.success)
+            ],
+            components: [new MessageActionRow().addComponents(
+                ...buttons
+            )]
+        }
     }
     /**
      * Destroys current pomodoro session and frees up memory
      */
     destroy(){
         this.connection.destroy();
-        //@ts-ignore
-        this.audioPlayer = null; //manually delete this property
         if(this.timeout){
             clearTimeout(this.timeout);
         }
         activePomodoros = activePomodoros.filter(pomo => pomo != this);
-        console.log(`Destroyed 1 session, ${activePomodoros.length} remain`);
+        //persist information
+        (async () => {
+            await prisma.session.update({
+                where: { id: this.id },
+                data:{ ended: new Date() }
+            });
+            await this.upsertParticipantStates();
+            log(`destroy session: ${activePomodoros.length} remain`);
+        })() 
     }
     /**
      * Plays the alarm tune on the VC
@@ -250,12 +367,22 @@ export class Pomodoro{
      * Batch updates all pomodoro sessions. See `Pomodoro#update` for more information
      */
     static async updateAll(){
-        console.log(`Batch updating ${activePomodoros.length} sessions`)
+        log(`batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
             if(pomo.paused) continue;
             await pomo.update();
             await pomo.displayUpdate(false);
         }
     }
+    /**
+     * Returns a list of members currently in the pomodoro session.
+     * @returns 
+     */
+    async getCurrentMembers(): Promise<GuildMember[]>{
+        let channel = <BaseGuildVoiceChannel> await this.interaction.client.channels.fetch(this.vcId);
+        if(!channel) return [];
+        return channel.members.toJSON().filter(member => !member.user.bot) || [];
+    }
+
 }
 setInterval(() => Pomodoro.updateAll(), GLOBAL_TIMER_SWEEP_INTERVAL);
