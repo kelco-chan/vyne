@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const rest_1 = require("@discordjs/rest");
 const v9_1 = require("discord-api-types/v9");
-const Command_1 = require("../lib/Command");
+const Command_1 = require("../lib/classes/Command");
 let production = process.env.PRODUCTION === "true";
 async function main() {
     console.log(`Updating commands for ${production ? "production" : "development"} ...`);

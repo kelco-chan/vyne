@@ -1,6 +1,6 @@
 import { MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
-import { Command } from "../lib/Command";
+import { Command } from "../lib/classes/Command";
 
 export default new Command()
     .setName("help")

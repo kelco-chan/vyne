@@ -4,13 +4,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const Command_1 = require("./lib/Command");
+const Command_1 = require("./lib/classes/Command");
 const config_1 = require("./assets/config");
 const embeds_1 = require("./assets/embeds");
-const InteractionCache_1 = require("./lib/InteractionCache");
+const InteractionCache_1 = require("./lib/classes/InteractionCache");
 const discord_modals_1 = __importDefault(require("discord-modals"));
-const Pomodoro_1 = require("./lib/Pomodoro");
-const PausableTimer_1 = __importDefault(require("./lib/PausableTimer"));
+const Pomodoro_1 = require("./lib/classes/Pomodoro");
+const PausableTimer_1 = __importDefault(require("./lib/classes/PausableTimer"));
 const errorHandling_1 = require("./lib/errorHandling");
 const http_1 = __importDefault(require("http"));
 const colors_1 = require("./assets/colors");
@@ -132,15 +132,26 @@ client.on("modalSubmit", async (interaction) => {
     if (!interaction.replied)
         await interaction.reply({ embeds: [embeds_1.Embeds.UNKNOWN_COMMAND] });
 });
-client.on("voiceStateUpdate", (oldState, newState) => {
-    let member = oldState.member;
+client.on("voiceStateUpdate", async (oldState, newState) => {
     if (newState?.member?.user?.bot || oldState?.member?.user?.bot)
         return;
     let oldSession = Pomodoro_1.Pomodoro.active.find(session => session.vcId === oldState.channelId);
     let newSession = Pomodoro_1.Pomodoro.active.find(session => session.vcId === newState.channelId);
     if (oldSession && oldState.member) {
+        //this is the session that was left
         let timer = oldSession.userTimers.get(oldState.member.user.id);
         timer && timer.pause();
+        let channel = await client.channels.fetch(oldSession.vcId);
+        if (channel && (channel.members.size === 1)) {
+            //everyone left STOP THE SESSION
+            oldSession.destroy();
+            oldSession.interaction.channel?.send({ embeds: [
+                    new discord_js_1.MessageEmbed()
+                        .setTitle("Session Stopped")
+                        .setColor(colors_1.Colors.error)
+                        .setDescription("The pomodoro session was stopped since everyone left the voice channel.")
+                ] });
+        }
     }
     if (newSession && newState.member) {
         let timer = newSession.userTimers.get(newState.member.user.id);

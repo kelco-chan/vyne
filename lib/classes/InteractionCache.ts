@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction } from "discord-modals";
 import { ButtonInteraction, Interaction, MessageComponentInteraction, SelectMenuInteraction, User } from "discord.js";
 import { nanoid } from "nanoid";
-import { CUSTOMID_CACHE_DEFAULT_LIFETIME, CUSTOMID_SWEEP_INTERVAL } from "../assets/config";
+import { CUSTOMID_CACHE_DEFAULT_LIFETIME, CUSTOMID_SWEEP_INTERVAL } from "../../assets/config";
 
 export type CustomIdEntry<T> = {
     /**

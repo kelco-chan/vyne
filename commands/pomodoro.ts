@@ -2,9 +2,9 @@ import { Modal, showModal, TextInputComponent } from "discord-modals";
 import { InteractionReplyOptions, Message, MessageActionRow, MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
 import { Embeds } from "../assets/embeds";
-import { Command } from "../lib/Command";
-import { cache, resolveEntry } from "../lib/InteractionCache";
-import { Pomodoro } from "../lib/Pomodoro";
+import { Command } from "../lib/classes/Command";
+import { cache, resolveEntry } from "../lib/classes/InteractionCache";
+import { Pomodoro } from "../lib/classes/Pomodoro";
 import prisma from "../lib/prisma";
 
 export default new Command()

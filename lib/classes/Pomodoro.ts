@@ -1,13 +1,14 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel } from "discord.js";
-import { Colors } from "../assets/colors";
-import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../assets/config";
+import { Colors } from "../../assets/colors";
+import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../../assets/config";
 import { stripIndents } from "common-tags"
 import { cache } from "./InteractionCache";
 import { nanoid } from "nanoid";
-import prisma from "./prisma";
+import prisma from "../prisma";
 import PausableTimer from "./PausableTimer";
 import debug from "debug";
+import { PrismaClientUnknownRequestError } from "@prisma/client/runtime";
 const log = debug("pomodoro");
 
 type PomodoroStatus = {
@@ -27,6 +28,8 @@ type PomodoroStatus = {
      * Current cycle (1-4)
      */
     cycle: number
+} | {
+    type : "FINISHED"
 }
 let activePomodoros:Pomodoro[] = [];
 /**
@@ -192,7 +195,7 @@ export class Pomodoro{
         };
         this.timeCompleted += Date.now() - this.lastUpdateTime;
         let status = this.getStatus();
-        if((status.cycle === 4 && status.type === "BREAK") || status.cycle > 4){
+        if(status.type === "FINISHED"){
             this.destroy();
             return;
         }else if(status.timeRemaining < GLOBAL_TIMER_SWEEP_INTERVAL){
@@ -201,9 +204,15 @@ export class Pomodoro{
             }
         }
         this.lastUpdateTime = Date.now();
-        //stagger the db updates so uyou dont have a billion db writes in 1 second
-        this.upsertParticipantStates()
-        
+        try{
+            await this.upsertParticipantStates();
+        }catch(e){
+            if(e instanceof PrismaClientUnknownRequestError){
+                log(`failed to upsert pariticpant status in session ${this.id}, error is unknown.`)
+            }else{
+                throw e;
+            }
+        }
     }
     /**
      * Upsert the states of all participants
@@ -256,6 +265,11 @@ export class Pomodoro{
         let timeCompleted = this.timeCompleted + (seekAhead || 0);
         let modulo = timeCompleted % SESSION_DURATION;
         let cycle = Math.floor(timeCompleted / SESSION_DURATION) + 1;
+        if((cycle === 4 && (WORK_DURATION <= modulo && modulo <= SESSION_DURATION)) || (cycle > 4)){
+            return {
+                type: "FINISHED"
+            }
+        }
         if(0 <= modulo && modulo < WORK_DURATION){
             return {
                 type: "WORK",
@@ -271,7 +285,7 @@ export class Pomodoro{
                 cycle
             }
         }else{
-            throw new Error(`Interesting modulo of ${modulo} ...`)
+            throw new Error("Unreachable code reached")
         }
     }
     /**
@@ -281,16 +295,23 @@ export class Pomodoro{
      */
     getStatusPayload(seekAhead?: number): InteractionReplyOptions{
         let status = this.getStatus(seekAhead);
-        let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
-        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
-        if(status.type === "BREAK" && status.cycle === 4){
+        if(status.type === "FINISHED"){
             return {
-                embeds:[new MessageEmbed()
-                    .setTitle("Session finished")
-                    .setColor(Colors.success)
-                    .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros!")]
+                embeds:[
+                    new MessageEmbed()
+                        .setTitle("Session finished")
+                        .setColor(Colors.success)
+                        .setDescription("The pomodoro session has finished, good job! Take a long break now and come back later to do more pomodoros. If you found this bot useful, please consider upvoting 👍")],
+                components: [new MessageActionRow().addComponents(
+                    new MessageButton()
+                        .setStyle("LINK")
+                        .setLabel("Upvote me on top.gg!")
+                        .setURL("https://top.gg/bot/961445600967163954/vote")
+                )]
             }
         }
+        let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
+        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
         let buttons = [
             new MessageButton()
                 .setLabel("Update status")

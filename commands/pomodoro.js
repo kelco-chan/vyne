@@ -7,9 +7,9 @@ const discord_modals_1 = require("discord-modals");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const embeds_1 = require("../assets/embeds");
-const Command_1 = require("../lib/Command");
-const InteractionCache_1 = require("../lib/InteractionCache");
-const Pomodoro_1 = require("../lib/Pomodoro");
+const Command_1 = require("../lib/classes/Command");
+const InteractionCache_1 = require("../lib/classes/InteractionCache");
+const Pomodoro_1 = require("../lib/classes/Pomodoro");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 exports.default = new Command_1.Command()
     .setName("pomo")

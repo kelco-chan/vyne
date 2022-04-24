@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
-const Command_1 = require("../lib/Command");
+const Command_1 = require("../lib/classes/Command");
 exports.default = new Command_1.Command()
     .setName("help")
     .setDescription("Displays a list of commands in vyne.")

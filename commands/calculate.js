@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Command_1 = require("../lib/Command");
+const Command_1 = require("../lib/classes/Command");
 const math_expression_evaluator_1 = __importDefault(require("math-expression-evaluator"));
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");

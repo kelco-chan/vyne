@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import { Command } from '../lib/Command';
+import { Command } from '../lib/classes/Command';
 let production = process.env.PRODUCTION === "true";
 async function main(){
     console.log(`Updating commands for ${production ? "production" : "development"} ...`)

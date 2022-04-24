@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const embeds_1 = require("../assets/embeds");
-const Command_1 = require("../lib/Command");
+const Command_1 = require("../lib/classes/Command");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 exports.default = new Command_1.Command()
     .setName("stats")
