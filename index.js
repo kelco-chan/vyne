@@ -12,6 +12,8 @@ const discord_modals_1 = __importDefault(require("discord-modals"));
 const Pomodoro_1 = require("./lib/Pomodoro");
 const PausableTimer_1 = __importDefault(require("./lib/PausableTimer"));
 const errorHandling_1 = require("./lib/errorHandling");
+const http_1 = __importDefault(require("http"));
+const colors_1 = require("./assets/colors");
 const client = new discord_js_1.Client({ intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES] });
 (0, discord_modals_1.default)(client);
 Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
@@ -153,6 +155,41 @@ client.on("voiceStateUpdate", (oldState, newState) => {
             timer.resume();
         }
     }
+});
+http_1.default.createServer(async function (req, res) {
+    res.setHeader("Content-Type", "application/json");
+    if (req.method === "GET" && req.url === "/servercount") {
+        res.end(JSON.stringify({
+            error: false,
+            data: {
+                serverCount: client.guilds.cache.size
+            }
+        }));
+    }
+}).listen(process.env.PORT || 3000);
+client.on("guildCreate", async function (guild) {
+    let channel = (await client.channels.fetch(config_1.GUILD_LOGGING_CHANNEL));
+    channel && channel.send({ embeds: [
+            new discord_js_1.MessageEmbed()
+                .setColor(colors_1.Colors.success)
+                .setTitle("Joined Guild")
+                .addField("Guild name", guild.name)
+                .addField("Member Count", "" + guild.approximateMemberCount, true)
+                .addField("Locale", guild.preferredLocale, true)
+                .setFooter({ text: `Total guild count: ${client.guilds.cache.size}` })
+        ] });
+});
+client.on("guildDelete", async function (guild) {
+    let channel = (await client.channels.fetch(config_1.GUILD_LOGGING_CHANNEL));
+    channel && channel.send({ embeds: [
+            new discord_js_1.MessageEmbed()
+                .setColor(colors_1.Colors.error)
+                .setTitle("Left Guild")
+                .addField("Guild name", guild.name)
+                .addField("Member Count", "" + guild.approximateMemberCount, true)
+                .addField("Locale", guild.preferredLocale, true)
+                .setFooter({ text: `Total guild count: ${client.guilds.cache.size}` })
+        ] });
 });
 setInterval(() => {
     const activities = [{ name: "with pomodoro timers", type: "PLAYING" }, { name: "you study", type: "WATCHING" }, { name: `over ${client.guilds.cache.size} servers`, type: "WATCHING" }];

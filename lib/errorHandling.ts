@@ -1,6 +1,7 @@
 import { stripIndents } from "common-tags";
 import { ModalSubmitInteraction } from "discord-modals";
 import { ButtonInteraction, CommandInteraction, MessageEmbed, SelectMenuInteraction, TextChannel } from "discord.js";
+import { ERROR_LOGGING_CHANNEL } from "../assets/config";
 import { Embeds } from "../assets/embeds";
 
 export async function reject(interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction, error: Error, timeStarted: number){
@@ -16,7 +17,7 @@ export async function reject(interaction: CommandInteraction | SelectMenuInterac
     console.dir(interaction);
     console.log("Time taken", Date.now() - timeStarted);
     console.log("-----------------------");
-    let channel = await interaction.client.channels.fetch("967863405119688754") as TextChannel | null;
+    let channel = await interaction.client.channels.fetch(ERROR_LOGGING_CHANNEL) as TextChannel | null;
     channel && await channel.send({embeds:[
         new MessageEmbed()
             .setTitle("Error detected during execution")
@@ -27,5 +28,5 @@ export async function reject(interaction: CommandInteraction | SelectMenuInterac
             Command: ${interaction.isCommand() ? interaction.commandName : "not a command"}
             `)
     ]})
-    process.exit(0);
+    throw error;
 }
