@@ -4,5 +4,4 @@ node_modules
 .VSCodeCounter
 .prod.env
 **/*.js.map
-**/*.js
 tsconfig.tsbuildinfo
