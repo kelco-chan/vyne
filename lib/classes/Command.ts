@@ -15,7 +15,10 @@ export class Command extends SlashCommandBuilder{
      * slash command handler for that interaction;
      */
     handler: CommandHandler;
-
+    /**
+     * Whether or not this command is limited to developers
+     */
+    isDevOnly: boolean;
     buttonHandlers: ButtonHandler<any>[];
     selectMenuHandlers: SelectMenuHandler<any>[];
     modalHandlers: ModalHandler<any>[];
@@ -26,6 +29,12 @@ export class Command extends SlashCommandBuilder{
         this.buttonHandlers = [];
         this.selectMenuHandlers = [];
         this.modalHandlers = [];
+        this.isDevOnly = false;
+    }
+    devOnly(){
+        this.isDevOnly = true;
+        this.setDefaultPermission(false);
+        return this;
     }
     matches(interaction: Interaction): boolean{
         return interaction.isCommand() && (interaction.commandName === this.name);
@@ -50,7 +59,7 @@ export class Command extends SlashCommandBuilder{
     }
     static async loadAll(){
         commands = [];
-        let fileNames = (await readdir(__dirname + "/../commands"))
+        let fileNames = (await readdir(__dirname + "/../../commands"))
         for (let fileName of fileNames) {
             if (!fileName.endsWith(".js")) continue;
             //WARNING: THIS WILL ONLY WORK IN COMMONJS. DO NOT SWITCH TO ESM

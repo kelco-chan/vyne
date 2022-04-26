@@ -1,4 +1,4 @@
-import { Command } from "../lib/Command";
+import { Command } from "../lib/classes/Command";
 import mexp from "math-expression-evaluator";
 import { MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
