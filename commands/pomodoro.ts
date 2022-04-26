@@ -33,7 +33,7 @@ export default new Command()
                         .setTitle("Session already running")
                         .setColor(Colors.error)
                         .setDescription(`There is already a pomodoro session in your current guild in <#${currentSession.vcId}>. Join the voice channel and run \`/pomo status\` to view its status.`)
-                        .setFooter({text:`Session ID" ${currentSession.id} · Voice channel ${currentSession.vcId}`})
+                        .setFooter({text:`Session ID: ${currentSession.id} · Voice channel: ${currentSession.vcId}`})
                 ]});
                 return false;
             }
@@ -58,12 +58,11 @@ export default new Command()
                         .setTitle("Session isn't here")
                         .setColor(Colors.error)
                         .setDescription(`The pomodoro session is currently active in <#${currentSession.vcId}>. Please join that voice channel instead to use pomodoro timers`)
-                        .setFooter({text:`Session ID" ${currentSession.id} · Voice channel ${currentSession.vcId}`})
+                        .setFooter({text:`Session ID: ${currentSession.id} · Voice channel: ${currentSession.vcId}`})
                 ]});
                 return false;
             }
             let payload = currentSession.getStatusPayload() as {embeds: MessageEmbed[], components: MessageActionRow[]};
-            //force an update
             if(subcmd === "status"){    
                 currentSession.update();
             }else if(subcmd === "pause"){
@@ -78,8 +77,9 @@ export default new Command()
                     .setTitle("Session stopped")
                     .setColor(Colors.error)
                     .setDescription(`The session in <#${vcId}> has been successfully stopped.`)
+                payload.components = [];
             }else{
-                throw new Error("unreachable code");
+                throw new Error("Unreachable Code");
             }
             await interaction.reply(payload);
             return true;
@@ -128,7 +128,7 @@ export default new Command()
                 .setTitle("Task saved")
                 .setColor(Colors.success)
                 .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
-                .setFooter({text:`Session ID: ${data.sessionId}`, iconURL:interaction.user.defaultAvatarURL})
+                .setFooter({text:`Session ID: ${data.sessionId}`, iconURL:interaction.client.user?.avatarURL() || ""})
         ]})
         return true;
     })

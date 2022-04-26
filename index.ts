@@ -24,7 +24,7 @@ client.on("interactionCreate", async interaction => {
     for(let command of Command.loaded){
         if(!command.matches(interaction)) continue;
         try{
-            let succeeded = await command.handler(interaction);
+            await command.handler(interaction);
         }catch(e){
             reject(interaction, e as Error, timeStarted);
         }
@@ -40,20 +40,12 @@ client.on("interactionCreate", async interaction => {
     try{
         for(let command of Command.loaded){
             for(let buttonHandler of command.buttonHandlers){
-                let success = await buttonHandler(interaction, entry);
-                if(success === true){
-                    ;//successful exection
-                }else if(success === false){
-                    ;//absolute disaster struck
-                }else if(success === undefined){
-                    ;///didnt match nooooo
-                }
+                await buttonHandler(interaction, entry);
             }
         }
     }catch(e){
         reject(interaction, e as Error, timeStarted);
     }
-    if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 });
 //handler for select menus
 client.on("interactionCreate", async interaction => {
@@ -65,20 +57,12 @@ client.on("interactionCreate", async interaction => {
     try{
         for(let command of Command.loaded){
             for(let selectMenuHandler of command.selectMenuHandlers){
-                let success = await selectMenuHandler(interaction, entry);
-                if(success === true){
-                    ;//successful exection
-                }else if(success === false){
-                    ;//absolute disaster struck
-                }else if(success === undefined){
-                    ;///didnt match nooooo
-                }
+                selectMenuHandler(interaction, entry);
             }
         }
     }catch(e){
         reject(interaction, e as Error, timeStarted)
     }
-    if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 });
 client.on("modalSubmit", async interaction => {
     let timeStarted = Date.now();
@@ -88,20 +72,12 @@ client.on("modalSubmit", async interaction => {
     try{
         for(let command of Command.loaded){
             for(let modalHandler of command.modalHandlers){
-                let success = await modalHandler(interaction, entry);
-                if(success === true){
-                    ;//successful exection
-                }else if(success === false){
-                    ;//absolute disaster struck
-                }else if(success === undefined){
-                    ;///didnt match nooooo
-                }
+                modalHandler(interaction, entry);
             }
         }
     }catch(e){
         reject(interaction, e as Error, timeStarted);
     }
-    if(!interaction.replied) await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]});
 })
 client.on("voiceStateUpdate", async (oldState, newState) => {
     if(newState?.member?.user?.bot || oldState?.member?.user?.bot) return;
