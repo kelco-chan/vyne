@@ -10,10 +10,9 @@ import PausableTimer from "./lib/classes/PausableTimer";
 import { reject } from "./lib/errorHandling";
 import http from "http";
 import { Colors } from "./assets/colors";
+//sh -c \"while true; do timeout 10800 <start command here>; done\"
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
-
 discordModals(client);
-
 Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
 client.once("ready", () => {
     console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
@@ -30,14 +29,11 @@ client.on("interactionCreate", async interaction => {
             reject(interaction, e as Error, timeStarted);
         }
     }
-    if(!interaction.replied){
-        await interaction.reply({embeds:[Embeds.UNKNOWN_COMMAND]})
-    }
 });
 //handler for buttons
 client.on("interactionCreate", async interaction => {
-    let timeStarted = Date.now();
     if(!interaction.isButton()) return;
+    let timeStarted = Date.now();
     let entry = resolveEntry(interaction);
     if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
     if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
@@ -61,8 +57,8 @@ client.on("interactionCreate", async interaction => {
 });
 //handler for select menus
 client.on("interactionCreate", async interaction => {
-    let timeStarted = Date.now();
     if(!interaction.isSelectMenu()) return;
+    let timeStarted = Date.now();
     let entry = resolveEntry(interaction);
     if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
     if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
@@ -118,13 +114,13 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
         let channel = await client.channels.fetch(oldSession.vcId) as VoiceChannel | null;
         if(channel && (channel.members.size === 1)){
             //everyone left STOP THE SESSION
-            oldSession.destroy();
             oldSession.interaction.channel?.send({embeds:[
                 new MessageEmbed()
-                    .setTitle("Session Stopped")
-                    .setColor(Colors.error)
-                    .setDescription("The pomodoro session was stopped since everyone left the voice channel.")
+                .setTitle("Session Stopped")
+                .setColor(Colors.error)
+                .setDescription("The pomodoro session was stopped since everyone left the voice channel.")
             ]})
+            oldSession.destroy();
         }
     }
     if(newSession && newState.member){
@@ -157,9 +153,8 @@ client.on("guildCreate", async function(guild){
     channel && channel.send({embeds:[
         new MessageEmbed()
             .setColor(Colors.success)
-            .setTitle("Joined Guild")
-            .addField("Guild name", guild.name)
-            .addField("Member Count", "" + guild.approximateMemberCount, true)
+            .setTitle(`Joined guild ${guild.name}`)
+            .addField("Members", "" + guild.approximateMemberCount, true)
             .addField("Locale", guild.preferredLocale, true)
             .setFooter({text: `Total guild count: ${client.guilds.cache.size}`})
     ]})
@@ -169,10 +164,11 @@ client.on("guildDelete", async function(guild){
     channel && channel.send({embeds:[
         new MessageEmbed()
             .setColor(Colors.error)
-            .setTitle("Left Guild")
-            .addField("Guild name", guild.name)
-            .addField("Member Count", "" + guild.approximateMemberCount, true)
+            .setTitle(`Left guild ${guild.name}`)
+            .addField("Guild ID", guild.id)
+            .addField("Members", "" + guild.approximateMemberCount, true)
             .addField("Locale", guild.preferredLocale, true)
+            .addField("Joined", guild.joinedAt.toLocaleDateString())
             .setFooter({text: `Total guild count: ${client.guilds.cache.size}`})
     ]})
 })

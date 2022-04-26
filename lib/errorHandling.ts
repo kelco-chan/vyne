@@ -5,11 +5,6 @@ import { ERROR_LOGGING_CHANNEL } from "../assets/config";
 import { Embeds } from "../assets/embeds";
 
 export async function reject(interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction, error: Error, timeStarted: number){
-    if(interaction.replied){
-        await interaction.followUp({embeds:[Embeds.UNKNOWN_ERROR]})
-    }else{
-        await interaction.reply({embeds:[Embeds.UNKNOWN_ERROR]});
-    }
     console.log("---- RUNTIME ERROR ----");
     console.log("Error:")
     console.error(error);
@@ -28,5 +23,6 @@ export async function reject(interaction: CommandInteraction | SelectMenuInterac
             Command: ${interaction.isCommand() ? interaction.commandName : "not a command"}
             `)
     ]})
+    interaction.channel?.send({embeds:[Embeds.UNKNOWN_ERROR]});
     throw error;
 }

@@ -33,11 +33,12 @@ export default new Command()
                         .setTitle("Session already running")
                         .setColor(Colors.error)
                         .setDescription(`There is already a pomodoro session in your current guild in <#${currentSession.vcId}>. Join the voice channel and run \`/pomo status\` to view its status.`)
+                        .setFooter({text:`Session ID" ${currentSession.id} · Voice channel ${currentSession.vcId}`})
                 ]});
                 return false;
             }
             let pomo = new Pomodoro(vcId, interaction, interaction.guild);
-            pomo.init();
+            pomo.init()
             await interaction.reply({content:"Started pomodoro session", ephemeral: true})
             await pomo.displayUpdate();
             return true;
@@ -57,6 +58,7 @@ export default new Command()
                         .setTitle("Session isn't here")
                         .setColor(Colors.error)
                         .setDescription(`The pomodoro session is currently active in <#${currentSession.vcId}>. Please join that voice channel instead to use pomodoro timers`)
+                        .setFooter({text:`Session ID" ${currentSession.id} · Voice channel ${currentSession.vcId}`})
                 ]});
                 return false;
             }

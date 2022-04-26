@@ -307,6 +307,7 @@ export class Pomodoro{
                         .setStyle("LINK")
                         .setLabel("Upvote me on top.gg!")
                         .setURL("https://top.gg/bot/961445600967163954/vote")
+                        .setEmoji("👍")
                 )]
             }
         }
@@ -376,7 +377,7 @@ export class Pomodoro{
      * Plays the alarm tune on the VC
      */
     playAlarm(){
-        this.audioPlayer.play(createAudioResource(`${__dirname}/../assets/notif.wav`));
+        this.audioPlayer.play(createAudioResource(`${__dirname}/../../assets/notif.wav`));
     }
     /**
      * A list of active pomodoros

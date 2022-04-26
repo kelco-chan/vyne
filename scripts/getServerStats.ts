@@ -8,6 +8,7 @@ client.once("ready", async () => {
     for(const [guildId, g] of client.guilds.cache){
         let guild = await g.fetch();
         guildInfos.push(stripIndents`
+        ID: ${guild.id}
         Name: ${guild.name}
         Member Count: ${guild.memberCount}
         Guild Created: ${guild.createdAt}

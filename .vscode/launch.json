@@ -31,6 +31,19 @@
             "envFile": "${workspaceFolder}/.prod.env"
         },
         {
+            "name": "See server details",
+            "program": "${workspaceFolder}/scripts/getServerStats.ts",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.prod.env"
+        },
+        {
             "name": "Update dev commands",
             "program": "${workspaceFolder}/scripts/updateCommands.ts",
             "request": "launch",
