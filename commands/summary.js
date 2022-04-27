@@ -7,7 +7,7 @@ const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const embeds_1 = require("../assets/embeds");
 const Command_1 = require("../lib/classes/Command");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = __importDefault(require("../lib/common/prisma"));
 exports.default = new Command_1.Command()
     .setName("stats")
     .setDescription("Retrieve the studying stats for you and your server")

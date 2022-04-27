@@ -3,7 +3,10 @@ import { ModalData, ModalSubmitInteraction } from "discord-modals";
 import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, MessageActionRow, MessageEmbed, SelectMenuInteraction } from "discord.js";
 import { InteractionResponseTypes } from "discord.js/typings/enums";
 import readdir from "recursive-readdir"
-import { CustomIdEntry } from "./InteractionCache";
+import { Embeds } from "../../assets/embeds";
+import client from "../common/client";
+import { reject } from "../errorHandling";
+import { CustomIdEntry, resolveEntry } from "./InteractionCache";
 type CommandHandler = (interaction: CommandInteraction) => Promise<boolean>;
 type ButtonHandler<T> = (interaction: ButtonInteraction, entry: CustomIdEntry<T>) => Promise<boolean|undefined>;
 type SelectMenuHandler<T> = (interaction: SelectMenuInteraction, entry: CustomIdEntry<T>) => Promise<boolean|undefined>;
@@ -78,3 +81,66 @@ export class Command extends SlashCommandBuilder{
         return commands;
     }
 }
+
+//handler for commands
+client.on("interactionCreate", async interaction => {
+    let timeStarted = Date.now();
+    if(!interaction.isCommand()) return;
+    for(let command of Command.loaded){
+        if(!command.matches(interaction)) continue;
+        try{
+            await command.handler(interaction);
+        }catch(e){
+            reject(interaction, e as Error, timeStarted);
+        }
+    }
+});
+//handler for buttons
+client.on("interactionCreate", async interaction => {
+    if(!interaction.isButton()) return;
+    let timeStarted = Date.now();
+    let entry = resolveEntry(interaction);
+    if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
+    if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
+    try{
+        for(let command of Command.loaded){
+            for(let buttonHandler of command.buttonHandlers){
+                await buttonHandler(interaction, entry);
+            }
+        }
+    }catch(e){
+        reject(interaction, e as Error, timeStarted);
+    }
+});
+//handler for select menus
+client.on("interactionCreate", async interaction => {
+    if(!interaction.isSelectMenu()) return;
+    let timeStarted = Date.now();
+    let entry = resolveEntry(interaction);
+    if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
+    if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
+    try{
+        for(let command of Command.loaded){
+            for(let selectMenuHandler of command.selectMenuHandlers){
+                selectMenuHandler(interaction, entry);
+            }
+        }
+    }catch(e){
+        reject(interaction, e as Error, timeStarted)
+    }
+});
+client.on("modalSubmit", async interaction => {
+    let timeStarted = Date.now();
+    let entry = resolveEntry(interaction);
+    if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
+    if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
+    try{
+        for(let command of Command.loaded){
+            for(let modalHandler of command.modalHandlers){
+                modalHandler(interaction, entry);
+            }
+        }
+    }catch(e){
+        reject(interaction, e as Error, timeStarted);
+    }
+})

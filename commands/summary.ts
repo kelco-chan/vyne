@@ -2,7 +2,7 @@ import { MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
 import { Embeds } from "../assets/embeds";
 import { Command } from "../lib/classes/Command";
-import prisma from "../lib/prisma";
+import prisma from "../lib/common/prisma";
 
 export default new Command()
     .setName("stats")

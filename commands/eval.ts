@@ -2,7 +2,7 @@ import { MessageAttachment, MessageEmbed } from "discord.js";
 import { Colors } from "../assets/colors";
 import { Command } from "../lib/classes/Command";
 import { Pomodoro } from "../lib/classes/Pomodoro";
-import prisma from "../lib/prisma";
+import prisma from "../lib/common/prisma";
 import {cache, resolveEntry} from "../lib/classes/InteractionCache";
 let classes = {
     Pomodoro,
@@ -29,7 +29,7 @@ export default new Command()
             if(results.length > 1000){
                 await interaction.editReply({embeds:[
                     baseEmbed.addField("Results", "attached")
-                ], files:[new MessageAttachment(Buffer.from(results))]})
+                ], files:[new MessageAttachment(Buffer.from(results), "results.txt")]})
             }else{
                 await interaction.editReply({embeds:[
                    baseEmbed.addField("Results", results)

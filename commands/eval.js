@@ -7,7 +7,7 @@ const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const Command_1 = require("../lib/classes/Command");
 const Pomodoro_1 = require("../lib/classes/Pomodoro");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = __importDefault(require("../lib/common/prisma"));
 const InteractionCache_1 = require("../lib/classes/InteractionCache");
 let classes = {
     Pomodoro: Pomodoro_1.Pomodoro,
@@ -35,7 +35,7 @@ exports.default = new Command_1.Command()
         if (results.length > 1000) {
             await interaction.editReply({ embeds: [
                     baseEmbed.addField("Results", "attached")
-                ], files: [new discord_js_1.MessageAttachment(Buffer.from(results))] });
+                ], files: [new discord_js_1.MessageAttachment(Buffer.from(results), "results.txt")] });
         }
         else {
             await interaction.editReply({ embeds: [

@@ -10,7 +10,7 @@ const embeds_1 = require("../assets/embeds");
 const Command_1 = require("../lib/classes/Command");
 const InteractionCache_1 = require("../lib/classes/InteractionCache");
 const Pomodoro_1 = require("../lib/classes/Pomodoro");
-const prisma_1 = __importDefault(require("../lib/prisma"));
+const prisma_1 = __importDefault(require("../lib/common/prisma"));
 exports.default = new Command_1.Command()
     .setName("pomo")
     .setDescription("Commands for setting up a pomodoro timer")
@@ -28,7 +28,7 @@ exports.default = new Command_1.Command()
             ] });
         return false;
     }
-    let currentSession = Pomodoro_1.Pomodoro.active.find(pomo => pomo.interaction.guildId);
+    let currentSession = Pomodoro_1.Pomodoro.active.find(pomo => interaction.guildId === pomo.interaction.guildId);
     let subcmd = interaction.options.getSubcommand();
     if (subcmd === "start") {
         if (currentSession) {

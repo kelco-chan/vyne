@@ -5,7 +5,7 @@ import { Embeds } from "../assets/embeds";
 import { Command } from "../lib/classes/Command";
 import { cache, resolveEntry } from "../lib/classes/InteractionCache";
 import { Pomodoro } from "../lib/classes/Pomodoro";
-import prisma from "../lib/prisma";
+import prisma from "../lib/common/prisma";
 
 export default new Command()
     .setName("pomo")
@@ -24,7 +24,7 @@ export default new Command()
             ]});
             return false;
         }
-        let currentSession = Pomodoro.active.find(pomo => pomo.interaction.guildId)
+        let currentSession = Pomodoro.active.find(pomo => interaction.guildId === pomo.interaction.guildId)
         let subcmd = interaction.options.getSubcommand();
         if(subcmd === "start"){
             if(currentSession){

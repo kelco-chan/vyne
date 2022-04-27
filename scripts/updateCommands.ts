@@ -29,7 +29,7 @@ async function main(){
                 permissions:[{
                     type:"USER",
                     permission: true,
-                    id:"961445600967163954"
+                    id:"624510393292816395"
                 }]
             }
         });
