@@ -1,14 +1,15 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel } from "discord.js";
+import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel, VoiceChannel } from "discord.js";
 import { Colors } from "../../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../../assets/config";
 import { stripIndents } from "common-tags"
 import { cache } from "./InteractionCache";
 import { nanoid } from "nanoid";
-import prisma from "../prisma";
+import prisma from "../common/prisma";
 import PausableTimer from "./PausableTimer";
 import debug from "debug";
 import { PrismaClientUnknownRequestError } from "@prisma/client/runtime";
+import client from "../common/client";
 const log = debug("pomodoro");
 
 type PomodoroStatus = {
@@ -408,3 +409,37 @@ export class Pomodoro{
 
 }
 setInterval(() => Pomodoro.updateAll(), GLOBAL_TIMER_SWEEP_INTERVAL);
+
+client.on("voiceStateUpdate", async (oldState, newState) => {
+    if(newState?.member?.user?.bot || oldState?.member?.user?.bot) return;
+    let oldSession = Pomodoro.active.find(session => session.vcId === oldState.channelId);
+    let newSession = Pomodoro.active.find(session => session.vcId === newState.channelId);
+    if(oldSession && oldState.member){
+        //this is the session that was left
+        let timer = oldSession.userTimers.get(oldState.member.user.id);
+        timer && timer.pause();
+        let channel = await client.channels.fetch(oldSession.vcId) as VoiceChannel | null;
+        if(channel && (channel.members.size === 1)){
+            //everyone left STOP THE SESSION
+            oldSession.interaction.channel?.send({embeds:[
+                new MessageEmbed()
+                .setTitle("Session Stopped")
+                .setColor(Colors.error)
+                .setDescription("The pomodoro session was stopped since everyone left the voice channel.")
+            ]})
+            oldSession.destroy();
+        }
+    }
+    if(newSession && newState.member){
+        let timer = newSession.userTimers.get(newState.member.user.id);
+        if(!timer){
+            timer = new PausableTimer();
+            newSession.userTimers.set(newState.member.user.id, timer);
+        }
+        if(newSession.paused){
+            timer.pause();
+        }else{
+            timer.resume();
+        }
+    }
+})

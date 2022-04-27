@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "build": "npm i && npx prisma generate && npx tsc"
-  },
   "author": "",
   "license": "ISC",
   "private": true,
@@ -21,6 +18,7 @@
     "@discordjs/voice": "^0.8.0",
     "@prisma/client": "^3.12.0",
     "@types/math-expression-evaluator": "^1.2.2",
+    "basic-ms": "^1.1.2",
     "cheerio": "^1.0.0-rc.10",
     "common-tags": "^1.8.2",
     "debug": "^4.3.4",
