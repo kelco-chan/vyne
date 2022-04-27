@@ -28,7 +28,7 @@ exports.default = new Command_1.Command()
             ] });
         return false;
     }
-    let currentSession = Pomodoro_1.Pomodoro.active.find(pomo => pomo.interaction.guildId);
+    let currentSession = Pomodoro_1.Pomodoro.active.find(pomo => interaction.guildId === pomo.interaction.guildId);
     let subcmd = interaction.options.getSubcommand();
     if (subcmd === "start") {
         if (currentSession) {

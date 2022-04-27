@@ -24,7 +24,7 @@ export default new Command()
             ]});
             return false;
         }
-        let currentSession = Pomodoro.active.find(pomo => pomo.interaction.guildId)
+        let currentSession = Pomodoro.active.find(pomo => interaction.guildId === pomo.interaction.guildId)
         let subcmd = interaction.options.getSubcommand();
         if(subcmd === "start"){
             if(currentSession){
