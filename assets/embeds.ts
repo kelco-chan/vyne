@@ -26,4 +26,8 @@ export const Embeds = {
         .setTitle("Expired session")
         .setColor(Colors.error)
         .setDescription("The session which you tried to query has expired. Be faster next time."),
+    INSUFFICIENT_PERMS: new MessageEmbed()
+        .setTitle("Insufficient Permission")
+        .setColor(Colors.error)
+        .setDescription("Sorry, but we could not send/update pomodoro updates because **we cannot send messages in this channel.** Please update the permissions so pomodoro timers work properly.")
 }

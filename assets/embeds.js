@@ -28,5 +28,9 @@ exports.Embeds = {
         .setTitle("Expired session")
         .setColor(colors_1.Colors.error)
         .setDescription("The session which you tried to query has expired. Be faster next time."),
+    INSUFFICIENT_PERMS: new discord_js_1.MessageEmbed()
+        .setTitle("Insufficient Permission")
+        .setColor(colors_1.Colors.error)
+        .setDescription("Sorry, but we could not send/update pomodoro updates because **we cannot send messages in this channel.** Please update the permissions so pomodoro timers work properly.")
 };
 //# sourceMappingURL=embeds.js.map
