@@ -46,7 +46,7 @@ exports.default = new Command_1.Command()
         let perms = interaction.guild.me?.permissionsIn(interaction.channel);
         if (!perms)
             return false;
-        if (perms.has("SEND_MESSAGES") && perms.has("MANAGE_MESSAGES")) {
+        if (perms.has("SEND_MESSAGES")) {
             ; //do nothing
         }
         else {

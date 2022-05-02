@@ -29,5 +29,5 @@ export const Embeds = {
     INSUFFICIENT_PERMS: new MessageEmbed()
         .setTitle("Insufficient Permissions")
         .setColor(Colors.error)
-        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send & manage messages** in this channel or use another text channel. Sorry for the inconvenience.")
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience.")
 }

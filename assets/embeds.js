@@ -31,6 +31,6 @@ exports.Embeds = {
     INSUFFICIENT_PERMS: new discord_js_1.MessageEmbed()
         .setTitle("Insufficient Permissions")
         .setColor(colors_1.Colors.error)
-        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send & manage messages** in this channel or use another text channel. Sorry for the inconvenience.")
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience.")
 };
 //# sourceMappingURL=embeds.js.map

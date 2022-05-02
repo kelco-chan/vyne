@@ -40,7 +40,7 @@ export default new Command()
             if(!interaction.channel) return false;
             let perms = interaction.guild.me?.permissionsIn(interaction.channel);
             if(!perms) return false;
-            if(perms.has("SEND_MESSAGES") && perms.has("MANAGE_MESSAGES")){
+            if(perms.has("SEND_MESSAGES")){
                 ;//do nothing
             }else{
                 await interaction.reply({embeds:[Embeds.INSUFFICIENT_PERMS]});
