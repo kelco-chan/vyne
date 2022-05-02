@@ -59,7 +59,7 @@ exports.default = new Command_1.Command()
         await pomo.displayUpdate();
         return true;
     }
-    else if (subcmd === "status" || subcmd === "pause" || subcmd === "resume" || subcmd === "stop") {
+    else if (subcmd === "status") {
         if (!currentSession) {
             await interaction.reply({ embeds: [
                     new discord_js_1.MessageEmbed()
@@ -79,30 +79,8 @@ exports.default = new Command_1.Command()
                 ] });
             return false;
         }
-        let payload = currentSession.getStatusPayload();
-        if (subcmd === "status") {
-            currentSession.update();
-        }
-        else if (subcmd === "pause") {
-            currentSession.pause();
-            payload.embeds[0]?.setTitle("Session paused");
-        }
-        else if (subcmd === "resume") {
-            currentSession.resume();
-            payload.embeds[0]?.setTitle("Session resumed");
-        }
-        else if (subcmd === "stop") {
-            currentSession.destroy();
-            payload.embeds[0] = new discord_js_1.MessageEmbed()
-                .setTitle("Session stopped")
-                .setColor(colors_1.Colors.error)
-                .setDescription(`The session in <#${vcId}> has been successfully stopped.`);
-            payload.components = [];
-        }
-        else {
-            throw new Error("Unreachable Code");
-        }
-        await interaction.reply(payload);
+        currentSession.update();
+        await interaction.reply(currentSession.getStatusPayload());
         return true;
     }
     else {
@@ -166,19 +144,59 @@ exports.default = new Command_1.Command()
     await interaction.update(session.getStatusPayload());
     return true;
 })
+    .addButtonHandler(async (interaction, { data }) => {
+    if ((data.cmd !== "resume_pomodoro") && (data.cmd !== "pause_pomodoro") && (data.cmd !== "stop_pomodoro"))
+        return;
+    if (!interaction || !interaction.inCachedGuild()) {
+        await interaction.reply({ embeds: [embeds_1.Embeds.SERVER_ONLY] });
+        return false;
+    }
+    let session = Pomodoro_1.Pomodoro.active.find(session => session.id === data.sessionId);
+    if (!session) {
+        await interaction.reply({ embeds: [embeds_1.Embeds.EXPIRED_SESSION] });
+        return false;
+    }
+    if (interaction.member.voice.channelId !== session.vcId) {
+        await interaction.reply({ embeds: [
+                new discord_js_1.MessageEmbed()
+                    .setTitle("Join the voice channel")
+                    .setColor(colors_1.Colors.error)
+                    .setDescription(`The pomodoro session is currently active in <#${session.vcId}>. Please join that voice channel instead to use pomodoro timers`)
+                    .setFooter({ text: `Session ID: ${session.id} · Voice channel: ${session.vcId}` })
+            ] });
+        return false;
+    }
+    if (data.cmd === "pause_pomodoro") {
+        session.pause();
+    }
+    else if (data.cmd === "resume_pomodoro") {
+        session.resume();
+    }
+    else if (data.cmd === "stop_pomodoro") {
+        session.destroy();
+    }
+    let payload = session.getStatusPayload();
+    if (data.cmd === "pause_pomodoro") {
+        payload.embeds[0]?.setTitle("Session paused").setColor(colors_1.Colors.error);
+    }
+    else if (data.cmd === "resume_pomodoro") {
+        payload.embeds[0]?.setTitle("Session resumed");
+    }
+    else if (data.cmd === "stop_pomodoro") {
+        payload.embeds[0] = new discord_js_1.MessageEmbed()
+            .setTitle("Session stopped")
+            .setColor(colors_1.Colors.error)
+            .setDescription(`The session in <#${session.vcId}> has been successfully stopped.`);
+        payload.components = [];
+    }
+    session.update();
+    await interaction.update(payload);
+    return true;
+})
     .addSubcommand(subcmd => subcmd
     .setName("start")
     .setDescription("Start a new pomodoro session (4x25mins)"))
     .addSubcommand(subcmd => subcmd
     .setName("status")
-    .setDescription("Shows the status of the current pomodoro session"))
-    .addSubcommand(subcmd => subcmd
-    .setName("pause")
-    .setDescription("Pauses the current pomodoro session"))
-    .addSubcommand(subcmd => subcmd
-    .setName("resume")
-    .setDescription("Resumes the current pomodoro"))
-    .addSubcommand(subcmd => subcmd
-    .setName("stop")
-    .setDescription("Stop the pomodoro session prematurely and terminate it."));
+    .setDescription("Shows the status of the current pomodoro session"));
 //# sourceMappingURL=pomodoro.js.map

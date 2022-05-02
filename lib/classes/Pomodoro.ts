@@ -318,7 +318,35 @@ export class Pomodoro{
         }
         let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
         let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
+        let b1 = this.paused ? (
+            new MessageButton()
+                .setLabel("Resume Session")
+                .setStyle("SECONDARY")
+                .setEmoji("▶")
+                .setCustomId(cache({
+                    cmd: "resume_pomodoro",
+                    sessionId: this.id
+                }, {users:["all"]}))
+        ) : (
+            new MessageButton()
+                .setLabel("Pause Session")
+                .setStyle("SECONDARY")
+                .setEmoji("⏸")
+                .setCustomId(cache({
+                    cmd: "pause_pomodoro",
+                    sessionId: this.id
+                }, {users:["all"]}))
+        );
         let buttons = [
+            b1,
+            new MessageButton()
+                .setLabel("Stop session")
+                .setStyle("SECONDARY")
+                .setCustomId(cache({
+                    cmd:"stop_pomodoro",
+                    sessionId: this.id
+                }, {users:["all"]}))
+                .setEmoji("⏹"),
             new MessageButton()
                 .setLabel("Update status")
                 .setStyle("SECONDARY")
