@@ -2,8 +2,9 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import { Client, Intents } from 'discord.js';
+import { DEV_USER_ID } from '../assets/config';
 import { Command } from '../lib/classes/Command';
-let production = process.env.PRODUCTION === "true";
+let production = process.env.NODE_ENV === "production"
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 async function main(){
     console.log(`Updating commands for ${production ? "production" : "development"} ...`);
@@ -22,18 +23,20 @@ async function main(){
             }[];
         }
         let isDevCommands = Command.loaded.filter(cmd => cmd.isDevOnly)
-        let fullPermissions:temp[] = isDevCommands.map(cmd => {
-            let id = cmdDatas.find(data => data.name === cmd.name && data.description === cmd.description)?.id + "";
-            return {
-                id,
-                permissions:[{
-                    type:"USER",
-                    permission: true,
-                    id:"624510393292816395"
-                }]
-            }
-        });
-        await client.application?.commands.permissions.set({fullPermissions, guild:process.env.DEV_GUILD_ID || ""})
+        if(isDevCommands.length > 0){
+            let fullPermissions:temp[] = isDevCommands.map(cmd => {
+                let id = cmdDatas.find(data => data.name === cmd.name && data.description === cmd.description)?.id + "";
+                return {
+                    id,
+                    permissions:[{
+                        type:"USER",
+                        permission: true,
+                        id:DEV_USER_ID
+                    }]
+                }
+            });
+            await client.application?.commands.permissions.set({fullPermissions, guild:process.env.DEV_GUILD_ID || ""})
+        }
     }else{
         
         await rest.put(Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID || "", process.env.DEV_GUILD_ID || ""), {body:[]})
@@ -47,18 +50,20 @@ async function main(){
             }[];
         }
         let isDevCommands = Command.loaded.filter(cmd => cmd.isDevOnly)
-        let fullPermissions:temp[] = isDevCommands.map(cmd => {
-            let id = cmdDatas.find(data => data.name === cmd.name && data.description === cmd.description)?.id + "";
-            return {
-                id,
-                permissions:[{
-                    type:"USER",
-                    permission: true,
-                    id:"624510393292816395"
-                }]
-            }
-        });
-        await client.application?.commands.permissions.set({fullPermissions, guild:process.env.DEV_GUILD_ID || ""})
+        if(isDevCommands.length > 0){
+            let fullPermissions:temp[] = isDevCommands.map(cmd => {
+                let id = cmdDatas.find(data => data.name === cmd.name && data.description === cmd.description)?.id + "";
+                return {
+                    id,
+                    permissions:[{
+                        type:"USER",
+                        permission: true,
+                        id:DEV_USER_ID
+                    }]
+                }
+            });
+            await client.application?.commands.permissions.set({fullPermissions, guild:process.env.DEV_GUILD_ID || ""})
+        }
     }
     console.log('Successfully registered application commands.');
     process.exit();

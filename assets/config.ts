@@ -15,3 +15,14 @@ export const CUSTOMID_CACHE_DEFAULT_LIFETIME = 10 * 60_000;
 
 export const GUILD_LOGGING_CHANNEL = "967872367802073209";
 export const ERROR_LOGGING_CHANNEL = "967863405119688754";
+
+export const DEV_USER_ID = "624510393292816395";
+
+/**
+ * Logging eval channels
+ */
+export const LE_CONSOLE_BOT_TOKEN = process.env.LE_CONSOLE_BOT_TOKEN || "";
+export const PROD_EVAL_CHANNEL_ID = "970447986549219328";
+export const DEV_EVAL_CHANNEL_ID = "970448444927918080";
+
+export const NODE_ENV = process.env.NODE_ENV || "";

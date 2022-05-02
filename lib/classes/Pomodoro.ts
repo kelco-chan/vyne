@@ -1,5 +1,5 @@
 import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import {  BaseGuildVoiceChannel, CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel, VoiceChannel } from "discord.js";
+import {  BaseGuildVoiceChannel, CommandInteraction, CommandInteractionOptionResolver, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel, VoiceChannel } from "discord.js";
 import { Colors } from "../../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../../assets/config";
 import { stripIndents } from "common-tags"
@@ -10,6 +10,7 @@ import PausableTimer from "./PausableTimer";
 import debug from "debug";
 import { PrismaClientUnknownRequestError } from "@prisma/client/runtime";
 import client from "../common/client";
+import { Embeds } from "../../assets/embeds";
 const log = debug("pomodoro");
 
 type PomodoroStatus = {
@@ -252,10 +253,13 @@ export class Pomodoro{
         //fetch the embed at a later time, just in case things go wrong
         let payload = this.getStatusPayload(MAX_TIMER_ALLOWED_ERROR)
         //this.interaction.editReply(payload);    
-        if(this.lastMessageUpdate){
-            this.lastMessageUpdate.delete();
+        try{
+            if(this.lastMessageUpdate){
+                await this.lastMessageUpdate.delete();
+            }
+            this.lastMessageUpdate = await this.interaction.channel?.send(payload);
+        }catch(e){
         }
-        this.lastMessageUpdate = await this.interaction.channel?.send(payload);
     }
     /**
      * Returns the status of the current pomodoro
@@ -332,7 +336,7 @@ export class Pomodoro{
                 .setCustomId(cache({
                     cmd:"prompt_completed_task",
                     sessionId: this.id
-                }, {users:["all"]}))
+                }, {users:["all"], allowRepeatedUsage: true}))
                 .setEmoji("📢")
             )
         }

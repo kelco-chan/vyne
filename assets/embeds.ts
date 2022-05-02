@@ -26,4 +26,8 @@ export const Embeds = {
         .setTitle("Expired session")
         .setColor(Colors.error)
         .setDescription("The session which you tried to query has expired. Be faster next time."),
+    INSUFFICIENT_PERMS: new MessageEmbed()
+        .setTitle("Insufficient Permissions")
+        .setColor(Colors.error)
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience.")
 }
