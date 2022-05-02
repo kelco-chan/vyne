@@ -18,9 +18,9 @@ exports.default = new Command_1.Command()
     }
     await interaction.deferReply();
     let scope = interaction.options.getSubcommand();
-    let durationString = interaction.options.getString("time");
-    let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
-    let afterDate = durationString === null ? new Date(1) : new Date(Date.now() - duration);
+    let durationString = (interaction.options.getString("time") || "week");
+    let duration = (24 * 60 * 60 * 1000) * (durationString === "day" ? 1 : durationString === "week" ? 7 : 30);
+    let afterDate = (durationString === "all_time") ? new Date(1) : new Date(Date.now() - duration);
     let sessionsCompleted = 0;
     let timeCompleted = 0;
     let tasksCompleted = 0;
@@ -36,13 +36,13 @@ exports.default = new Command_1.Command()
                     started: { gte: afterDate }
                 } }
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma_1.default.sessionParticipant.count({
+        tasksCompleted = (await prisma_1.default.sessionParticipant.findMany({
             select: { tasksCompleted: true },
             where: { session: {
                     guildId: interaction.guildId,
                     started: { gte: afterDate }
                 } }
-        })).tasksCompleted;
+        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0);
     }
     else if (scope === "personal") {
         sessionsCompleted = await prisma_1.default.sessionParticipant.count({
@@ -58,19 +58,19 @@ exports.default = new Command_1.Command()
                 session: { started: { gte: afterDate } }
             }
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma_1.default.sessionParticipant.count({
+        tasksCompleted = (await prisma_1.default.sessionParticipant.findMany({
             select: { tasksCompleted: true },
             where: {
                 userId: interaction.user.id,
                 session: { started: { gte: afterDate } }
             }
-        })).tasksCompleted;
+        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0);
     }
     await interaction.editReply({ embeds: [
             new discord_js_1.MessageEmbed()
                 .setColor(colors_1.Colors.success)
                 .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
-                .setDescription(durationString === null ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
+                .setDescription(durationString === "all_time" ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
                 .addField("`📅` Sessions", sessionsCompleted + " sessions completed in total")
                 .addField("`⏰` Time studied", `${Math.floor(timeCompleted / 60000)} minutes studied in total`)
                 .addField("`✅` Tasks", `${tasksCompleted} tasks completed in total`)
@@ -97,6 +97,7 @@ exports.default = new Command_1.Command()
     .setChoices([
     ["last 24hrs", "day"],
     ["last week", "week"],
-    ["last month", "month"]
+    ["last month", "month"],
+    ["all time", "all_time"]
 ])));
 //# sourceMappingURL=summary.js.map
