@@ -41,6 +41,18 @@ exports.default = new Command_1.Command()
                 ] });
             return false;
         }
+        if (!interaction.channel)
+            return false;
+        let perms = interaction.guild.me?.permissionsIn(interaction.channel);
+        if (!perms)
+            return false;
+        if (perms.has("SEND_MESSAGES") && perms.has("MANAGE_MESSAGES")) {
+            ; //do nothing
+        }
+        else {
+            await interaction.reply({ embeds: [embeds_1.Embeds.INSUFFICIENT_PERMS] });
+            return false;
+        }
         let pomo = new Pomodoro_1.Pomodoro(vcId, interaction, interaction.guild);
         pomo.init();
         await interaction.reply({ content: "Started pomodoro session", ephemeral: true });

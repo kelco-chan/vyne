@@ -1,14 +1,17 @@
 import { msToTime } from "basic-ms";
 import discordModals from "discord-modals";
-import { ActivitiesOptions, Client, Intents, MessageEmbed, TextChannel } from "discord.js";
+import { ActivitiesOptions, Client, Intents, Message, MessageAttachment, MessageEmbed, TextChannel } from "discord.js";
 import { Colors } from "../../assets/colors";
-import { DISCORD_TOKEN, GUILD_LOGGING_CHANNEL } from "../../assets/config";
+import { DEV_EVAL_CHANNEL_ID, DEV_USER_ID, DISCORD_TOKEN, GUILD_LOGGING_CHANNEL, LE_CONSOLE_BOT_TOKEN, NODE_ENV, PROD_EVAL_CHANNEL_ID } from "../../assets/config";
 
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
+export const leConsoleClient = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
+
 discordModals(client);
 client.once("ready", () => {
     console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });
+leConsoleClient.once("ready", async () => console.log("Le Console connected to Discord"));
 
 setInterval(() => {
     const activities:ActivitiesOptions[] = [{name : "with pomodoro timers", type:"PLAYING"}, {name:"you study", type:"WATCHING"}, {name:`over ${client.guilds.cache.size} servers`, type:"WATCHING"}]
@@ -16,7 +19,6 @@ setInterval(() => {
         activities[Math.floor(Math.random() * activities.length)]
     ]})
 }, 100_000);
-
 
 client.on("guildCreate", async function(guild){
     let channel = (await client.channels.fetch(GUILD_LOGGING_CHANNEL)) as (TextChannel | null);
@@ -44,6 +46,6 @@ client.on("guildDelete", async function(guild){
             .setFooter({text: `Total guild count: ${client.guilds.cache.size}`})
     ]})
 })
-
 client.login(DISCORD_TOKEN);
+leConsoleClient.login(LE_CONSOLE_BOT_TOKEN);
 export default client;

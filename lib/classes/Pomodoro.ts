@@ -259,9 +259,6 @@ export class Pomodoro{
             }
             this.lastMessageUpdate = await this.interaction.channel?.send(payload);
         }catch(e){
-            await this.interaction.followUp({embeds:[
-                Embeds.INSUFFICIENT_PERMS
-            ]})
         }
     }
     /**
@@ -339,7 +336,7 @@ export class Pomodoro{
                 .setCustomId(cache({
                     cmd:"prompt_completed_task",
                     sessionId: this.id
-                }, {users:["all"]}))
+                }, {users:["all"], allowRepeatedUsage: true}))
                 .setEmoji("📢")
             )
         }

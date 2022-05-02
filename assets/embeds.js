@@ -29,8 +29,8 @@ exports.Embeds = {
         .setColor(colors_1.Colors.error)
         .setDescription("The session which you tried to query has expired. Be faster next time."),
     INSUFFICIENT_PERMS: new discord_js_1.MessageEmbed()
-        .setTitle("Insufficient Permission")
+        .setTitle("Insufficient Permissions")
         .setColor(colors_1.Colors.error)
-        .setDescription("Sorry, but we could not send/update pomodoro updates because **we cannot send messages in this channel.** Please update the permissions so pomodoro timers work properly.")
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send & manage messages** in this channel or use another text channel. Sorry for the inconvenience.")
 };
 //# sourceMappingURL=embeds.js.map
