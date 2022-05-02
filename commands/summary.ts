@@ -14,9 +14,9 @@ export default new Command()
         }
         await interaction.deferReply();
         let scope = <"server" | "personal">interaction.options.getSubcommand();
-        let durationString = <"day" | "week" | "month" | null> interaction.options.getString("time");
-        let duration = (durationString === "day" ? 1 : durationString === "week" ? 7 : 30) * 24 * 60 * 60 * 1000;
-        let afterDate = durationString === null ? new Date(1) : new Date(Date.now() - duration)
+        let durationString = <"day" | "week" | "month" | "all_time"> (interaction.options.getString("time") || "week");
+        let duration = (24 * 60 * 60 * 1000) * (durationString === "day" ? 1 : durationString === "week" ? 7 : 30);
+        let afterDate = (durationString === "all_time") ? new Date(1) : new Date(Date.now() - duration)
         let sessionsCompleted = 0;
         let timeCompleted = 0;
         let tasksCompleted = 0;
@@ -32,13 +32,13 @@ export default new Command()
                     started: { gte: afterDate }
                 }}
             }))._sum.timeCompleted || 0;
-            tasksCompleted = (await prisma.sessionParticipant.count({
+            tasksCompleted = (await prisma.sessionParticipant.findMany({
                 select:{ tasksCompleted: true },
                 where:{ session:{
                     guildId: interaction.guildId,
                     started: { gte: afterDate }
                 }}
-            })).tasksCompleted
+            })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0)
         }else if(scope === "personal") {
             sessionsCompleted = await prisma.sessionParticipant.count({
                 where: {
@@ -53,19 +53,19 @@ export default new Command()
                     session:{ started: { gte: afterDate } }
                 }
             }))._sum.timeCompleted || 0;
-            tasksCompleted = (await prisma.sessionParticipant.count({
+            tasksCompleted = (await prisma.sessionParticipant.findMany({
                 select:{ tasksCompleted: true },
                 where:{
                     userId: interaction.user.id,
                     session: { started: { gte: afterDate } } 
                 }
-            })).tasksCompleted
+            })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0)
         }
         await interaction.editReply({embeds: [
             new MessageEmbed()
                 .setColor(Colors.success)
                 .setTitle(`Studying statistics for ${scope === "server" ? interaction.guild?.name : interaction.user.username}`)
-                .setDescription(durationString === null ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
+                .setDescription(durationString === "all_time" ? "> Showing activities from all time" : `> Filtering pomdoro sessions from a ${durationString} ago`)
                 .addField("`📅` Sessions", sessionsCompleted + " sessions completed in total")
                 .addField("`⏰` Time studied", `${Math.floor(timeCompleted / 60_000)} minutes studied in total`)
                 .addField("`✅` Tasks", `${tasksCompleted} tasks completed in total`)
@@ -92,6 +92,7 @@ export default new Command()
             .setChoices([
                 ["last 24hrs", "day"],
                 ["last week", "week"],
-                ["last month", "month"]
+                ["last month", "month"],
+                ["all time", "all_time"]
             ])))
     
