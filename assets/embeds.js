@@ -31,6 +31,14 @@ exports.Embeds = {
     INSUFFICIENT_PERMS: new discord_js_1.MessageEmbed()
         .setTitle("Insufficient Permissions")
         .setColor(colors_1.Colors.error)
-        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience.")
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience."),
+    PRIVATE_TEXT_CHANNEL: (channelId) => new discord_js_1.MessageEmbed()
+        .setTitle("Private Channel")
+        .setColor(colors_1.Colors.error)
+        .setDescription(`Sorry, we could not set up a pomodoro timer in this **text** channel since <#${channelId}> is a **private channel**. Please allow \`Vyne\` to access this channel for features to work properly.`),
+    PRIVATE_Voice_CHANNEL: (channelId) => new discord_js_1.MessageEmbed()
+        .setTitle("Private Channel")
+        .setColor(colors_1.Colors.error)
+        .setDescription(`Sorry, we could not set up a pomodoro timer in the **voice** channel <#${channelId}> since it is a **private channel**. Please allow \`Vyne\` to access this channel for features to work properly.`)
 };
 //# sourceMappingURL=embeds.js.map

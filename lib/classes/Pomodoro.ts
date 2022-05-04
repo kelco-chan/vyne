@@ -253,13 +253,10 @@ export class Pomodoro{
         //fetch the embed at a later time, just in case things go wrong
         let payload = this.getStatusPayload(MAX_TIMER_ALLOWED_ERROR)
         //this.interaction.editReply(payload);    
-        try{
-            if(this.lastMessageUpdate){
-                await this.lastMessageUpdate.delete();
-            }
-            this.lastMessageUpdate = await this.interaction.channel?.send(payload);
-        }catch(e){
+        if(this.lastMessageUpdate){
+            await this.lastMessageUpdate.delete();
         }
+        this.lastMessageUpdate = await this.interaction.channel?.send(payload);
     }
     /**
      * Returns the status of the current pomodoro
