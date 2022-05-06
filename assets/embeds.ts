@@ -29,5 +29,13 @@ export const Embeds = {
     INSUFFICIENT_PERMS: new MessageEmbed()
         .setTitle("Insufficient Permissions")
         .setColor(Colors.error)
-        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience.")
+        .setDescription("Sorry, we cannot send messages in this channel. To ensure `Vyne` features function properly, please **allow us to send messages** in this channel or use another text channel. Sorry for the inconvenience."),
+    PRIVATE_TEXT_CHANNEL: (channelId:string) => new MessageEmbed()
+        .setTitle("Private Channel")
+        .setColor(Colors.error)
+        .setDescription(`Sorry, we could not set up a pomodoro timer in this **text** channel since <#${channelId}> is a **private channel**. Please allow \`Vyne\` to access this channel for features to work properly.`),
+    PRIVATE_Voice_CHANNEL: (channelId:string) => new MessageEmbed()
+        .setTitle("Private Channel")
+        .setColor(Colors.error)
+        .setDescription(`Sorry, we could not set up a pomodoro timer in the **voice** channel <#${channelId}> since it is a **private channel**. Please allow \`Vyne\` to access this channel for features to work properly.`)
 }

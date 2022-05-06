@@ -40,16 +40,39 @@ export default new Command()
             if(!interaction.channel) return false;
             let perms = interaction.guild.me?.permissionsIn(interaction.channel);
             if(!perms) return false;
-            if(perms.has("SEND_MESSAGES")){
-                ;//do nothing
-            }else{
+            if(!perms.has("VIEW_CHANNEL")){
+                await interaction.reply({embeds:[Embeds.PRIVATE_TEXT_CHANNEL(interaction.channelId)]});
+                return false;
+            }
+            if(!perms.has("SEND_MESSAGES")){
                 await interaction.reply({embeds:[Embeds.INSUFFICIENT_PERMS]});
+                return false;
+            }
+            if(!interaction.member.voice.channel) return false;
+            let vPerms = interaction.guild.me?.permissionsIn(interaction.member.voice.channel);
+            if(!vPerms) return false;
+            if(!vPerms.has("VIEW_CHANNEL")){
+                await interaction.reply({embeds:[Embeds.PRIVATE_Voice_CHANNEL(vcId)]})
                 return false;
             }
             let pomo = new Pomodoro(vcId, interaction, interaction.guild);
             pomo.init()
-            await interaction.reply({content:"Started pomodoro session", ephemeral: true})
-            await pomo.displayUpdate();
+            await interaction.reply({
+                content:"Starting pomodoro session ... (a new message should appear below shortly)",
+                ephemeral: true
+            })
+            try{
+                await pomo.displayUpdate();
+            }catch(e){
+                await interaction.followUp({embeds:[
+                    new MessageEmbed()
+                        .setTitle("Unknown Error")
+                        .setDescription("Something stopped us from setting up pomodoro timers. Please try again or check that Vyne has sufficient permissions to set up the pomodoro timers.")
+                        .setColor(Colors.error)
+                ]})
+                pomo.destroy();
+                return false;    
+            }
             return true;
         }else if(subcmd === "status"){
             if(!currentSession){
