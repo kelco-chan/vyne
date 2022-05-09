@@ -100,4 +100,4 @@ exports.default = new Command_1.Command()
     ["last month", "month"],
     ["all time", "all_time"]
 ])));
-//# sourceMappingURL=summary.js.map
+//# sourceMappingURL=stats.js.map

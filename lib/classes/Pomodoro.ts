@@ -202,7 +202,11 @@ export class Pomodoro{
             return;
         }else if(status.timeRemaining < GLOBAL_TIMER_SWEEP_INTERVAL){
             if(!this.timeout){
-                this.schedule(() => {this.update(); this.displayUpdate(true)}, status.timeRemaining - MAX_TIMER_ALLOWED_ERROR);
+                this.schedule(() => {
+                    this.update();
+                    this.playAlarm();
+                    this.displayUpdate()
+                }, status.timeRemaining - MAX_TIMER_ALLOWED_ERROR);
             }
         }
         this.lastUpdateTime = Date.now();
@@ -244,20 +248,19 @@ export class Pomodoro{
         }
     }
     /**
-     * Renders and updated to the end user;
-     * @param playAlarm whether or not to play an alarm
+     * Renders and updated to the end user
      */
-    async displayUpdate(playAlarm?: boolean){
+    async displayUpdate(){
         if(!this.interaction.replied) return; //no updates needed if no session initialised yet
-        if(playAlarm) this.playAlarm();
         //fetch the embed at a later time, just in case things go wrong
         let payload = this.getStatusPayload(MAX_TIMER_ALLOWED_ERROR)
         //this.interaction.editReply(payload);    
         if(this.lastMessageUpdate){
-            await this.lastMessageUpdate.delete();
+            this.lastMessageUpdate = await this.lastMessageUpdate.edit(payload)
+        }else{
+            this.lastMessageUpdate = await this.interaction.channel?.send(payload);
         }
-        this.lastMessageUpdate = await this.interaction.channel?.send(payload);
-    }
+}
     /**
      * Returns the status of the current pomodoro
      * @param seekAhead Amount of milliseconds to look into the future. E.g. if `seekAhead` is set to 100ms, this will return the status embed at time Date.now() + 100ms
@@ -313,8 +316,6 @@ export class Pomodoro{
                 )]
             }
         }
-        let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
-        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
         let b1 = this.paused ? (
             new MessageButton()
                 .setLabel("Resume Session")
@@ -365,18 +366,27 @@ export class Pomodoro{
                 .setEmoji("📢")
             )
         }
+        let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
+        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
+        let info = `[ ${(Math.round(status.timeElapsed/1000/60) + "").padStart(2, "0")}m ]${" ".repeat(message.length - 2 * 7)}[ ${(Math.round(status.timeRemaining/1000/60) + "").padStart(2, "0")}m ]`.split("");
+        let cycleMessage = `[ Cycle ${status.cycle} ]`.split("");
+        info.splice(
+            Math.ceil( (info.length - 1)/2 - cycleMessage.length/2 ),
+            cycleMessage.length,
+            ...cycleMessage
+        )
         return {
             embeds:[
                 new MessageEmbed()
                     .setTitle(status.type === "WORK" ? "Working ..." : "Taking a break ...")
-                    .setDescription(stripIndents`\`\`\`less
-                        ${message}
-                        [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
-                        \`\`\``)
-                    .addField("Cycle", `${status.cycle}/4`, true)
-                    .addField("Elapsed", `${Math.round(status.timeElapsed/60000)}m`, true)
-                    .addField("Remaining", `${Math.round(status.timeRemaining/60000)}m`, true)
-                    .setFooter({text:`Status last updated on ${new Date().toLocaleTimeString("en-US")}`, iconURL: (this.interaction.client.user?.avatarURL() || "")})
+                    .setDescription(stripIndents`
+                    \`\`\`ini
+                    ${info.join("")}
+                    \`\`\`\`\`\`less
+                    [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
+                    \`\`\`\`\`\`less
+                    ${message}\`\`\`*Last updated at <t:${Math.floor(Date.now() / 1000)}:t>*
+                    `)
                     .setColor(Colors.success)
             ],
             components: [new MessageActionRow().addComponents(
@@ -423,7 +433,7 @@ export class Pomodoro{
         for(let pomo of activePomodoros){
             if(pomo.paused) continue;
             await pomo.update();
-            await pomo.displayUpdate(false);
+            await pomo.displayUpdate();
         }
     }
     /**
