@@ -100,12 +100,15 @@ exports.default = new Command_1.Command()
                         .setTitle("Session isn't here")
                         .setColor(colors_1.Colors.error)
                         .setDescription(`The pomodoro session is currently active in <#${currentSession.vcId}>. Please join that voice channel instead to use pomodoro timers`)
-                        .setFooter({ text: `Session ID: ${currentSession.id} · Voice channel: ${currentSession.vcId}` })
                 ] });
             return false;
         }
         currentSession.update();
-        await interaction.reply(currentSession.getStatusPayload());
+        let message = await interaction.reply({ ...currentSession.getStatusPayload(), fetchReply: true });
+        if (currentSession.lastMessageUpdate) {
+            currentSession.lastMessageUpdate.delete().catch(e => e);
+            currentSession.lastMessageUpdate = message;
+        }
         return true;
     }
     else {
@@ -201,13 +204,7 @@ exports.default = new Command_1.Command()
         session.destroy();
     }
     let payload = session.getStatusPayload();
-    if (data.cmd === "pause_pomodoro") {
-        payload.embeds[0]?.setTitle("Session paused").setColor(colors_1.Colors.error);
-    }
-    else if (data.cmd === "resume_pomodoro") {
-        payload.embeds[0]?.setTitle("Session resumed");
-    }
-    else if (data.cmd === "stop_pomodoro") {
+    if (data.cmd === "stop_pomodoro") {
         payload.embeds[0] = new discord_js_1.MessageEmbed()
             .setTitle("Session stopped")
             .setColor(colors_1.Colors.error)

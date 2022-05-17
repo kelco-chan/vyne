@@ -2,16 +2,13 @@ import { AudioPlayer, createAudioPlayer, createAudioResource, joinVoiceChannel, 
 import {  BaseGuildVoiceChannel, CommandInteraction, CommandInteractionOptionResolver, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageActionRow, MessageButton, MessageEmbed, ThreadChannel, VoiceChannel } from "discord.js";
 import { Colors } from "../../assets/colors";
 import { GLOBAL_TIMER_SWEEP_INTERVAL, MAX_TIMER_ALLOWED_ERROR, SESSION_DURATION, WORK_DURATION } from "../../assets/config";
-import { stripIndents } from "common-tags"
 import { cache } from "./InteractionCache";
 import { nanoid } from "nanoid";
 import prisma from "../common/prisma";
 import PausableTimer from "./PausableTimer";
-import debug from "debug";
 import { PrismaClientUnknownRequestError } from "@prisma/client/runtime";
 import client from "../common/client";
-import { Embeds } from "../../assets/embeds";
-const log = debug("pomodoro");
+import { relativeTimestamp } from "../helpers/timestamp";
 
 type PomodoroStatus = {
     /**
@@ -71,7 +68,7 @@ export class Pomodoro{
      */
     timeout?: NodeJS.Timeout
     /**
-     * The original interaction OR message that triggered this pomodoro
+     * The original interaction that triggered this pomodoro
      */
     interaction: CommandInteraction;
     /**
@@ -85,7 +82,7 @@ export class Pomodoro{
     /**
      * Constructor of the pomodoro class
      * @param vcId ID of the vc in which this pomodoro belongs
-     * @param interacion The interaction taht initiated this pomodoro session
+     * @param interaction The interaction taht initiated this pomodoro session
      * @param guild Guild in which this pomodoro belongs
      */
     constructor(vcId: string, interaction: CommandInteraction, guild:Guild){
@@ -104,7 +101,7 @@ export class Pomodoro{
         this.audioPlayer = createAudioPlayer();
         this.connection.subscribe(this.audioPlayer);
         activePomodoros.push(this);
-        log(`create session: ${activePomodoros.length} active`);
+        console.log(`Pomodoro: create session, ${activePomodoros.length} active`);
     }
     /**
      * Inits the pomodoro session
@@ -214,7 +211,7 @@ export class Pomodoro{
             await this.upsertParticipantStates();
         }catch(e){
             if(e instanceof PrismaClientUnknownRequestError){
-                log(`failed to upsert pariticpant status in session ${this.id}, error is unknown.`)
+                console.log(`Pomodoro: failed to upsert pariticpant status in session ${this.id}, error is unknown.`)
             }else{
                 throw e;
             }
@@ -256,10 +253,10 @@ export class Pomodoro{
         let payload = this.getStatusPayload(MAX_TIMER_ALLOWED_ERROR)
         //this.interaction.editReply(payload);    
         if(this.lastMessageUpdate){
-            this.lastMessageUpdate = await this.lastMessageUpdate.edit(payload)
-        }else{
-            this.lastMessageUpdate = await this.interaction.channel?.send(payload);
+            this.lastMessageUpdate.delete().catch(e => e);
         }
+        this.lastMessageUpdate = await this.interaction.channel?.send(payload);
+        
 }
     /**
      * Returns the status of the current pomodoro
@@ -367,27 +364,17 @@ export class Pomodoro{
             )
         }
         let message = status.type === "WORK" ? "Keep up the studying and don't you dare get off task 😠" : "Get away from the screen and take a break rofl";
-        let progress = Math.floor(status.timeElapsed / (status.timeElapsed + status.timeRemaining) * (message.length - 3));
-        let info = `[ ${(Math.round(status.timeElapsed/1000/60) + "").padStart(2, "0")}m ]${" ".repeat(message.length - 2 * 7)}[ ${(Math.round(status.timeRemaining/1000/60) + "").padStart(2, "0")}m ]`.split("");
-        let cycleMessage = `[ Cycle ${status.cycle} ]`.split("");
-        info.splice(
-            Math.ceil( (info.length - 1)/2 - cycleMessage.length/2 ),
-            cycleMessage.length,
-            ...cycleMessage
-        )
+        //!! DANGER - USE TYPE ASSERTION WITH CAUTIOn
+        let vc = client.channels.cache.get(this.vcId) as VoiceChannel | undefined;
         return {
             embeds:[
                 new MessageEmbed()
-                    .setTitle(status.type === "WORK" ? "Working ..." : "Taking a break ...")
-                    .setDescription(stripIndents`
-                    \`\`\`ini
-                    ${info.join("")}
-                    \`\`\`\`\`\`less
-                    [=${"=".repeat(progress)}${" ".repeat(message.length-3-progress)}]
-                    \`\`\`\`\`\`less
-                    ${message}\`\`\`*Last updated at <t:${Math.floor(Date.now() / 1000)}:t>*
-                    `)
-                    .setColor(Colors.success)
+                    .setTitle(`Cycle ${status.cycle} of 4: ` + (this.paused ? "Session paused" : status.type === "WORK" ? "Working ..." : "Taking a break ..."))
+                    .setDescription(`\`\`\`diff\n+ ${message}\`\`\``)
+                    .addField("Started", `${relativeTimestamp(Date.now() - status.timeElapsed)}`, true)
+                    .addField("Ending", `${relativeTimestamp(Date.now() + status.timeRemaining)}`, true)
+                    .setColor(this.paused ? Colors.error : Colors.success)
+                    .setFooter({text: `Currently studying in #${vc?.name} with ${(vc?.members?.size || 1) - 1} people`})
             ],
             components: [new MessageActionRow().addComponents(
                 ...buttons
@@ -410,7 +397,7 @@ export class Pomodoro{
                 data:{ ended: new Date() }
             });
             await this.upsertParticipantStates();
-            log(`destroy session: ${activePomodoros.length} remain`);
+            console.log(`Pomodoro: destroy session, ${activePomodoros.length} remain`);
         })() 
     }
     /**
@@ -429,7 +416,7 @@ export class Pomodoro{
      * Batch updates all pomodoro sessions. See `Pomodoro#update` for more information
      */
     static async updateAll(){
-        log(`batch updating ${activePomodoros.length} sessions`)
+        console.log(`Pomodoro: batch updating ${activePomodoros.length} sessions`)
         for(let pomo of activePomodoros){
             if(pomo.paused) continue;
             await pomo.update();

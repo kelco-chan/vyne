@@ -6,7 +6,7 @@ exports.DEV_GUILD_ID = process.env.DEV_GUILD_ID || "";
 exports.DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "";
 exports.SESSION_DURATION = 30 * 60000;
 exports.WORK_DURATION = 25 * 60000;
-exports.GLOBAL_TIMER_SWEEP_INTERVAL = Math.max(exports.SESSION_DURATION / 30, 1000);
+exports.GLOBAL_TIMER_SWEEP_INTERVAL = 4 * 60000;
 /**
  * Maximum allowed error in pomodoro alert timing in MS
  */
