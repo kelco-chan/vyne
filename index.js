@@ -26,7 +26,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Command_1 = require("./lib/classes/Command");
 const http_1 = __importDefault(require("http"));
 const client_1 = __importStar(require("./lib/common/client"));
 const config_1 = require("./assets/config");
@@ -36,15 +35,15 @@ const discord_js_1 = require("discord.js");
 const Pomodoro_1 = require("./lib/classes/Pomodoro");
 const InteractionCache_1 = require("./lib/classes/InteractionCache");
 const prisma_1 = __importDefault(require("./lib/common/prisma"));
+const Command_1 = require("./lib/classes/Command");
 //sh -c \"while true; do timeout 10800 <start command here>; done\"
 let classes = {
     Pomodoro: Pomodoro_1.Pomodoro,
-    Command: Command_1.Command,
     cache: InteractionCache_1.cache,
     resolveEntry: InteractionCache_1.resolveEntry,
     prisma: prisma_1.default
 };
-Command_1.Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`));
+(0, Command_1.loadCommands)().then(commands => console.log(`Loaded ${commands.length} commands.`));
 http_1.default.createServer(async function (req, res) {
     res.setHeader("Content-Type", "application/json");
     if (req.method === "GET" && req.url === "/servercount") {

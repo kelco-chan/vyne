@@ -1,9 +1,8 @@
-import { ModalSubmitInteraction } from "discord-modals";
-import { ButtonInteraction, Interaction, MessageComponentInteraction, SelectMenuInteraction, User } from "discord.js";
+import { ButtonInteraction, Interaction, MessageComponentInteraction, ModalSubmitInteraction, SelectMenuInteraction, User } from "discord.js";
 import { nanoid } from "nanoid";
 import { CUSTOMID_CACHE_DEFAULT_LIFETIME, CUSTOMID_SWEEP_INTERVAL } from "../../assets/config";
 
-export type CustomIdEntry<T> = {
+export type CustomIdEntry<T extends {cmd:string}> = {
     /**
      * Timestamp in which this entry roughly should expire
      */
@@ -19,7 +18,7 @@ export type CustomIdEntry<T> = {
     /**
      * Custom data of choice
      */
-    data:  {cmd:string} & T
+    data: T
 }
 type CacheOptions = {
     /**
@@ -47,7 +46,7 @@ export function cache<T extends {cmd: string}>(data: T, options: CacheOptions){
     return key;
 }
 
-export function resolveEntry<T extends {cmd: string}>(interaction: ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction): CustomIdEntry<T> | undefined | "INVALID_USER" {
+export function resolveEntry<T extends {cmd: string}>(interaction: MessageComponentInteraction | ModalSubmitInteraction): CustomIdEntry<T> | undefined | "INVALID_USER" {
     let entry = entryCache.get(interaction.customId);
     if(!entry) return undefined;
     if(!(entry.intendedUsers.includes(interaction.user.id) || entry.intendedUsers.includes("all"))){

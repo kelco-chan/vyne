@@ -1,4 +1,3 @@
-import { Command } from "./lib/classes/Command";
 import http from "http";
 import client, { leConsoleClient } from "./lib/common/client";
 import { DEV_EVAL_CHANNEL_ID, DEV_USER_ID, NODE_ENV, PROD_EVAL_CHANNEL_ID } from "./assets/config";
@@ -8,15 +7,15 @@ import { MessageAttachment } from "discord.js";
 import { Pomodoro } from "./lib/classes/Pomodoro";
 import { cache, resolveEntry } from "./lib/classes/InteractionCache";
 import prisma from "./lib/common/prisma"
+import { loadCommands } from "./lib/classes/Command";
 //sh -c \"while true; do timeout 10800 <start command here>; done\"
 let classes = {
     Pomodoro,
-    Command,
     cache,
     resolveEntry,
     prisma
 }
-Command.loadAll().then(commands => console.log(`Loaded ${commands.length} commands.`))
+loadCommands().then(commands => console.log(`Loaded ${commands.length} commands.`))
 
 http.createServer(async function(req,res){
     res.setHeader("Content-Type", "application/json");

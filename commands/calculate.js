@@ -3,19 +3,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Command_1 = require("../lib/classes/Command");
 const math_expression_evaluator_1 = __importDefault(require("math-expression-evaluator"));
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
-exports.default = new Command_1.Command()
+const builders_1 = require("@discordjs/builders");
+const Command_1 = require("../lib/classes/Command");
+exports.default = new builders_1.SlashCommandBuilder()
     .setName("calculate")
     .setDescription("Calculate a mathematical expression")
     .addStringOption(option => option
     .setName("expression")
     .setDescription("The expression that you want to calculate")
     .setAutocomplete(false)
-    .setRequired(true))
-    .setHandler(async function (interaction) {
+    .setRequired(true));
+(0, Command_1.addCommandHandler)("calculate", async function (interaction) {
     let exp = interaction.options.getString("expression", true);
     let succeeded = true;
     let result;
@@ -33,6 +34,6 @@ exports.default = new Command_1.Command()
                 .addField("Expression", "```" + exp + "```")
                 .addField("Result", "```" + result + "```")
         ] });
-    return succeeded;
+    return succeeded ? "SUCCESS" : "ERROR";
 });
 //# sourceMappingURL=calculate.js.map

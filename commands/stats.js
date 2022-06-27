@@ -3,18 +3,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const builders_1 = require("@discordjs/builders");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const embeds_1 = require("../assets/embeds");
 const Command_1 = require("../lib/classes/Command");
 const prisma_1 = __importDefault(require("../lib/common/prisma"));
-exports.default = new Command_1.Command()
+exports.default = new builders_1.SlashCommandBuilder()
     .setName("stats")
     .setDescription("Retrieve the studying stats for you and your server")
-    .setHandler(async (interaction) => {
+    .addSubcommand(subcmd => subcmd
+    .setName("personal")
+    .setDescription("View your own studying stats")
+    .addStringOption(option => option
+    .setName("time")
+    .setDescription("The time period that the stats shoudl be on")
+    .setChoices([
+    ["last 24hrs", "day"],
+    ["last week", "week"],
+    ["last month", "month"]
+])))
+    .addSubcommand(subcmd => subcmd
+    .setName("server")
+    .setDescription("View the studying statistics of the current server")
+    .addStringOption(option => option
+    .setName("time")
+    .setDescription("The time period that the stats shoudl be on")
+    .setChoices([
+    ["last 24hrs", "day"],
+    ["last week", "week"],
+    ["last month", "month"],
+    ["all time", "all_time"]
+])));
+(0, Command_1.addCommandHandler)(/^stats/, async (interaction) => {
     if (interaction.guildId === null) {
         await interaction.reply({ embeds: [embeds_1.Embeds.SERVER_ONLY] });
-        return false;
+        return "ERROR";
     }
     await interaction.deferReply();
     let scope = interaction.options.getSubcommand();
@@ -75,29 +99,6 @@ exports.default = new Command_1.Command()
                 .addField("`⏰` Time studied", `${Math.floor(timeCompleted / 60000)} minutes studied in total`)
                 .addField("`✅` Tasks", `${tasksCompleted} tasks completed in total`)
         ] });
-    return false;
-})
-    .addSubcommand(subcmd => subcmd
-    .setName("personal")
-    .setDescription("View your own studying stats")
-    .addStringOption(option => option
-    .setName("time")
-    .setDescription("The time period that the stats shoudl be on")
-    .setChoices([
-    ["last 24hrs", "day"],
-    ["last week", "week"],
-    ["last month", "month"]
-])))
-    .addSubcommand(subcmd => subcmd
-    .setName("server")
-    .setDescription("View the studying statistics of the current server")
-    .addStringOption(option => option
-    .setName("time")
-    .setDescription("The time period that the stats shoudl be on")
-    .setChoices([
-    ["last 24hrs", "day"],
-    ["last week", "week"],
-    ["last month", "month"],
-    ["all time", "all_time"]
-])));
+    return "SUCCESS";
+});
 //# sourceMappingURL=stats.js.map

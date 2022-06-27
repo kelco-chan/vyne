@@ -3,14 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const discord_modals_1 = require("discord-modals");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const Command_1 = require("../lib/classes/Command");
 const InteractionCache_1 = require("../lib/classes/InteractionCache");
 const node_fetch_1 = __importDefault(require("node-fetch"));
+const builders_1 = require("@discordjs/builders");
 function createModal(userid, mode) {
-    return new discord_modals_1.Modal()
+    return new discord_js_1.Modal()
         .setTitle("TeX Editor")
         .setCustomId((0, InteractionCache_1.cache)({
         cmd: "tex",
@@ -18,24 +18,24 @@ function createModal(userid, mode) {
     }, {
         users: [userid]
     }))
-        .addComponents(new discord_modals_1.TextInputComponent()
+        .addComponents(new discord_js_1.MessageActionRow().addComponents(new discord_js_1.TextInputComponent()
         .setLabel("Please input your TeX expression below:")
         .setPlaceholder("\\frac{1}{2}")
-        .setStyle("LONG")
+        .setStyle("PARAGRAPH")
         .setRequired(true)
-        .setCustomId("input"));
+        .setCustomId("input")));
 }
-exports.default = new Command_1.Command()
+exports.default = new builders_1.SlashCommandBuilder()
     .setName("tex")
-    .setDescription("Render some LaTeX math")
-    .setHandler(async (interaction) => {
-    await (0, discord_modals_1.showModal)(createModal(interaction.user.id, "reply"), { client: interaction.client, interaction });
-    return true;
-})
-    .addModalHandler(async (interaction, { data }) => {
+    .setDescription("Render some LaTeX math");
+(0, Command_1.addCommandHandler)("tex", async (interaction) => {
+    await interaction.showModal(createModal(interaction.user.id, "reply"));
+    return "SUCCESS";
+});
+(0, Command_1.addModalSubmitHandler)(async (interaction, { data }) => {
     if (data.cmd !== "tex")
-        return;
-    let tex = interaction.getTextInputValue("input");
+        return "NO_MATCH";
+    let tex = interaction.fields.getTextInputValue("input");
     let url = `https://chart.googleapis.com/chart?cht=tx&chco=FFFFFF&chf=bg,s,00FF0000&chs=${300}&chl=${encodeURIComponent(tex)}`;
     let res = await (0, node_fetch_1.default)(url);
     let buf = await res.buffer();
@@ -68,12 +68,12 @@ exports.default = new Command_1.Command()
     else {
         await interaction.update(payload);
     }
-    return true;
-})
-    .addButtonHandler(async (interaction, { data }) => {
+    return "SUCCESS";
+});
+(0, Command_1.addButtonHandler)(async (interaction, { data }) => {
     if (data.cmd !== "show_tex_edit")
-        return;
-    await (0, discord_modals_1.showModal)(createModal(interaction.user.id, "update"), { client: interaction.client, interaction });
-    return true;
+        return "NO_MATCH";
+    await interaction.showModal(createModal(interaction.user.id, "update"));
+    return "SUCCESS";
 });
 //# sourceMappingURL=tex.js.map

@@ -1,5 +1,4 @@
 import { msToTime } from "basic-ms";
-import discordModals from "discord-modals";
 import { ActivitiesOptions, Client, Intents, Message, MessageAttachment, MessageEmbed, TextChannel } from "discord.js";
 import { Colors } from "../../assets/colors";
 import { DEV_EVAL_CHANNEL_ID, DEV_USER_ID, DISCORD_TOKEN, GUILD_LOGGING_CHANNEL, LE_CONSOLE_BOT_TOKEN, NODE_ENV, PROD_EVAL_CHANNEL_ID } from "../../assets/config";
@@ -7,7 +6,6 @@ import { DEV_EVAL_CHANNEL_ID, DEV_USER_ID, DISCORD_TOKEN, GUILD_LOGGING_CHANNEL,
 const client = new Client({intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES]});
 export const leConsoleClient = new Client({intents:[Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
 
-discordModals(client);
 client.once("ready", () => {
     console.log(`Connected to Discord, serving ${client.guilds.cache.size} guilds.`);
 });

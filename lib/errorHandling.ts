@@ -1,10 +1,9 @@
 import { stripIndents } from "common-tags";
-import { ModalSubmitInteraction } from "discord-modals";
-import { ButtonInteraction, CommandInteraction, MessageEmbed, SelectMenuInteraction, TextChannel } from "discord.js";
+import { ButtonInteraction, CommandInteraction, Interaction, MessageEmbed, ModalSubmitInteraction, SelectMenuInteraction, TextBasedChannel, TextChannel } from "discord.js";
 import { ERROR_LOGGING_CHANNEL } from "../assets/config";
 import { Embeds } from "../assets/embeds";
 
-export async function reject(interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction, error: Error, timeStarted: number){
+export async function reject(interaction: {channel: TextBasedChannel | null | undefined} & Interaction , error: Error, timeStarted: number){
     console.log("---- RUNTIME ERROR ----");
     console.log("Error:")
     console.error(error);

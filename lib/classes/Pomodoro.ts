@@ -96,6 +96,7 @@ export class Pomodoro{
         this.connection = joinVoiceChannel({
             channelId: vcId,
             guildId: guild.id,
+            //@ts-ignore wrong djs typings, not problematic
             adapterCreator: guild.voiceAdapterCreator
         });
         this.audioPlayer = createAudioPlayer();
@@ -295,7 +296,7 @@ export class Pomodoro{
      * @param seekAhead Amount of milliseconds to look into the future. E.g. if `seekAhead` is set to 100ms, this will return the status embed at time Date.now() + 100ms
      * @returns Message embed description of the current pomodoro status
      */
-    getStatusPayload(seekAhead?: number): InteractionReplyOptions{
+    getStatusPayload(seekAhead?: number): {embeds: MessageEmbed[], components: MessageActionRow<any>[]}{
         let status = this.getStatus(seekAhead);
         if(status.type === "FINISHED"){
             return {
