@@ -60,13 +60,10 @@ exports.default = new builders_1.SlashCommandBuilder()
                     started: { gte: afterDate }
                 } }
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma_1.default.sessionParticipant.findMany({
-            select: { tasksCompleted: true },
-            where: { session: {
-                    guildId: interaction.guildId,
-                    started: { gte: afterDate }
-                } }
-        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0);
+        tasksCompleted = await prisma_1.default.todoItem.count({ where: {
+                id: interaction.user.id,
+                completed: { gte: afterDate }
+            } });
     }
     else if (scope === "personal") {
         sessionsCompleted = await prisma_1.default.sessionParticipant.count({
@@ -82,13 +79,10 @@ exports.default = new builders_1.SlashCommandBuilder()
                 session: { started: { gte: afterDate } }
             }
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma_1.default.sessionParticipant.findMany({
-            select: { tasksCompleted: true },
-            where: {
-                userId: interaction.user.id,
-                session: { started: { gte: afterDate } }
-            }
-        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0);
+        tasksCompleted = await prisma_1.default.todoItem.count({ where: {
+                id: interaction.user.id,
+                completed: { not: null }
+            } });
     }
     await interaction.editReply({ embeds: [
             new discord_js_1.MessageEmbed()

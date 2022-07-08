@@ -14,12 +14,29 @@ model Guild{
   id             String    @id @map("_id")
   sessions       Session[]
 }
+
+/// A user of Vyne
 model User{
   id             String                   @id @map("_id")
   joined         DateTime                 @default(now())
   participants   SessionParticipant[]
+  todos          TodoItem[]
 }
 
+/// A todo item of a user
+model TodoItem{
+  id          String   @id @map("_id") @default(uuid())
+  description String
+  completed   DateTime? ///The time that the todo item has been completed, if it has been completed.
+  
+  userId      String
+  user        User     @relation(fields:[userId], references: [id])
+
+  participantId String?
+  participant SessionParticipant? @relation(fields: [participantId], references: [id]) /// The participant that actually completed the session
+}
+
+/// A Pomodoro studying session
 model Session{
   id           String    @id @map("_id") @default(uuid())
   started      DateTime 
@@ -31,6 +48,7 @@ model Session{
   vcId         String
 }
 
+/// An object that reflects a user's presence during a study session
 model SessionParticipant{
   id             String @map("_id") @id @default(uuid())
   userId         String 
@@ -38,6 +56,6 @@ model SessionParticipant{
   sessionId      String
   session        Session @relation(fields: [sessionId], references: [id])
   timeCompleted  Int
-  tasksCompleted String[]
+  itemsCompleted TodoItem[]
   @@unique([userId, sessionId])
 }

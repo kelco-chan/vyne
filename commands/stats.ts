@@ -57,13 +57,10 @@ addCommandHandler(/^stats/, async (interaction) => {
                 started: { gte: afterDate }
             }}
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma.sessionParticipant.findMany({
-            select:{ tasksCompleted: true },
-            where:{ session:{
-                guildId: interaction.guildId,
-                started: { gte: afterDate }
-            }}
-        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0)
+        tasksCompleted = await prisma.todoItem.count({where:{
+            id: interaction.user.id,
+            completed: { gte: afterDate }
+        }})
     }else if(scope === "personal") {
         sessionsCompleted = await prisma.sessionParticipant.count({
             where: {
@@ -78,13 +75,10 @@ addCommandHandler(/^stats/, async (interaction) => {
                 session:{ started: { gte: afterDate } }
             }
         }))._sum.timeCompleted || 0;
-        tasksCompleted = (await prisma.sessionParticipant.findMany({
-            select:{ tasksCompleted: true },
-            where:{
-                userId: interaction.user.id,
-                session: { started: { gte: afterDate } } 
-            }
-        })).reduce((prev, curr) => prev + curr.tasksCompleted.length, 0)
+        tasksCompleted = await prisma.todoItem.count({where:{
+            id: interaction.user.id,
+            completed: {not: null}
+        }})
     }
     await interaction.editReply({embeds: [
         new MessageEmbed()

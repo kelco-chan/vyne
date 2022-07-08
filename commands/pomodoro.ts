@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { InteractionReplyOptions, Message, MessageActionRow, MessageEmbed, Modal, ModalActionRowComponent, TextInputComponent } from "discord.js";
+import { InteractionReplyOptions, Message, MessageActionRow, MessageEmbed, MessageSelectMenu, Modal, ModalActionRowComponent, TextInputComponent } from "discord.js";
 import { Colors } from "../assets/colors";
 import { Embeds } from "../assets/embeds";
 import { addButtonHandler, addCommandHandler, addModalSubmitHandler } from "../lib/classes/Command";
@@ -112,35 +112,6 @@ addCommandHandler(/^pomo/, async (interaction) => {
     }
 })
 
-addModalSubmitHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
-    if(data.cmd !== "submit_completed_task") return "NO_MATCH";
-    let task = interaction.fields.getTextInputValue("task");
-    await prisma.sessionParticipant.upsert({
-        where:{ userId_sessionId:{
-            userId: interaction.user.id,
-            sessionId: data.sessionId
-        }},
-        update:{
-            tasksCompleted: {
-                push: task
-            }
-        },
-        create:{
-            timeCompleted: 0,
-            userId: interaction.user.id,
-            sessionId: data.sessionId
-        }
-    })
-    await interaction.reply({ephemeral: true, embeds:[
-        new MessageEmbed()
-            .setTitle("Task saved")
-            .setColor(Colors.success)
-            .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
-            .setFooter({text:`Session ID: ${data.sessionId}`, iconURL:interaction.client.user?.avatarURL() || ""})
-    ]})
-    return "SUCCESS";
-})
-
 addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
     if((data.cmd !== "resume_pomodoro") && (data.cmd !== "pause_pomodoro") && (data.cmd !== "stop_pomodoro")) return "NO_MATCH";
     if(!interaction || !interaction.inCachedGuild()){
@@ -182,24 +153,6 @@ addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) =
     return "SUCCESS";
 })
 
-addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
-    if(data.cmd !== "prompt_completed_task") return "NO_MATCH";
-    let modal = new Modal()
-        .setTitle("Task Completion Check")
-        .setCustomId(cache({cmd:"submit_completed_task", sessionId:data.sessionId}, {users:[interaction.user.id], duration:3 * 60_000}))
-        .addComponents(
-            new MessageActionRow<ModalActionRowComponent>().addComponents(
-                new TextInputComponent()
-                    .setLabel("What task did you just complete?")
-                    .setPlaceholder("All of the devious english homework")
-                    .setStyle("SHORT")
-                    .setRequired(true)
-                    .setCustomId("task")
-            )
-        )
-    await interaction.showModal(modal);
-    return "SUCCESS";
-})
 addButtonHandler<{cmd: string, sessionId: string}>(async (interaction, {data}) => {
     if(data.cmd !== "update_pomodoro_embed_status") return "NO_MATCH";
     let session = Pomodoro.active.find(session => session.id === data.sessionId);

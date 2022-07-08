@@ -95,7 +95,7 @@ client.on("interactionCreate", async interaction => {
     let timeStarted = Date.now();
     try{
         let entry;
-        if(interaction.isMessageComponent()){
+        if(interaction.isModalSubmit() || interaction.isMessageComponent()){
             entry = resolveEntry(interaction);
             if(!entry) return await interaction.reply({embeds:[Embeds.EXPIRED_COMPONENT], ephemeral: true});
             if(entry === "INVALID_USER") return await interaction.reply({embeds:[Embeds.INVALID_USER], ephemeral: true})
@@ -130,11 +130,11 @@ client.on("interactionCreate", async interaction => {
         reject(interaction, e as Error, timeStarted);
     }
 });
-export function addCommandHandler(command: string | string[] | RegExp, fn: CommandHandlerCallback){
+export function addCommandHandler(command: HandlerCommandMatcher, fn: CommandHandlerCallback){
     loadedHandlers.push({type:"Command", command, fn});
 }
 
-export function addAutocompleteHandler(command: string, fn: AutocompleteHandlerCallback){
+export function addAutocompleteHandler(command: HandlerCommandMatcher, fn: AutocompleteHandlerCallback){
     loadedHandlers.push({type:"Autocomplete", command, fn});
 }
 

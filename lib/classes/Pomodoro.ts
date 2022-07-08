@@ -358,7 +358,7 @@ export class Pomodoro{
                 .setLabel("Hold yourself accountable")
                 .setStyle("SECONDARY")
                 .setCustomId(cache({
-                    cmd:"prompt_completed_task",
+                    cmd:"prompt_complete_todo_task",
                     sessionId: this.id
                 }, {users:["all"], allowRepeatedUsage: true}))
                 .setEmoji("📢")

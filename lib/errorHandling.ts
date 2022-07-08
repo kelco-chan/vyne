@@ -16,12 +16,12 @@ export async function reject(interaction: {channel: TextBasedChannel | null | un
         new MessageEmbed()
             .setTitle("Error detected during execution")
             .addField("Time Taken", `${Date.now() - timeStarted}`)
-            .addField(`Error: ${error.message}`, error.stack || "")
+            .addField(`Error: ${error.message}`.slice(0, 256), (error.stack || "").slice(0, 1024))
             .addField("Context", stripIndents`
             Interaction Guild Id: ${interaction.guildId}
             Command: ${interaction.isCommand() ? interaction.commandName : "not a command"}
             `)
     ]})
     interaction.channel?.send({embeds:[Embeds.UNKNOWN_ERROR]});
-    throw error;
+    debugger; //throw error;
 }

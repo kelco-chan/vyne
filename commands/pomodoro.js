@@ -1,16 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const builders_1 = require("@discordjs/builders");
 const discord_js_1 = require("discord.js");
 const colors_1 = require("../assets/colors");
 const embeds_1 = require("../assets/embeds");
 const Command_1 = require("../lib/classes/Command");
-const InteractionCache_1 = require("../lib/classes/InteractionCache");
 const Pomodoro_1 = require("../lib/classes/Pomodoro");
-const prisma_1 = __importDefault(require("../lib/common/prisma"));
 exports.default = new builders_1.SlashCommandBuilder()
     .setName("pomo")
     .setDescription("Commands for setting up a pomodoro timer")
@@ -121,35 +116,6 @@ exports.default = new builders_1.SlashCommandBuilder()
         throw new Error(`Unknown subcommand ${interaction.options.getSubcommand()}`);
     }
 });
-(0, Command_1.addModalSubmitHandler)(async (interaction, { data }) => {
-    if (data.cmd !== "submit_completed_task")
-        return "NO_MATCH";
-    let task = interaction.fields.getTextInputValue("task");
-    await prisma_1.default.sessionParticipant.upsert({
-        where: { userId_sessionId: {
-                userId: interaction.user.id,
-                sessionId: data.sessionId
-            } },
-        update: {
-            tasksCompleted: {
-                push: task
-            }
-        },
-        create: {
-            timeCompleted: 0,
-            userId: interaction.user.id,
-            sessionId: data.sessionId
-        }
-    });
-    await interaction.reply({ ephemeral: true, embeds: [
-            new discord_js_1.MessageEmbed()
-                .setTitle("Task saved")
-                .setColor(colors_1.Colors.success)
-                .setDescription("Your task has been successfully saved, and you held yourself accountable for what you did in the last 25 minutes!")
-                .setFooter({ text: `Session ID: ${data.sessionId}`, iconURL: interaction.client.user?.avatarURL() || "" })
-        ] });
-    return "SUCCESS";
-});
 (0, Command_1.addButtonHandler)(async (interaction, { data }) => {
     if ((data.cmd !== "resume_pomodoro") && (data.cmd !== "pause_pomodoro") && (data.cmd !== "stop_pomodoro"))
         return "NO_MATCH";
@@ -191,21 +157,6 @@ exports.default = new builders_1.SlashCommandBuilder()
     }
     session.update();
     await interaction.update(payload);
-    return "SUCCESS";
-});
-(0, Command_1.addButtonHandler)(async (interaction, { data }) => {
-    if (data.cmd !== "prompt_completed_task")
-        return "NO_MATCH";
-    let modal = new discord_js_1.Modal()
-        .setTitle("Task Completion Check")
-        .setCustomId((0, InteractionCache_1.cache)({ cmd: "submit_completed_task", sessionId: data.sessionId }, { users: [interaction.user.id], duration: 3 * 60000 }))
-        .addComponents(new discord_js_1.MessageActionRow().addComponents(new discord_js_1.TextInputComponent()
-        .setLabel("What task did you just complete?")
-        .setPlaceholder("All of the devious english homework")
-        .setStyle("SHORT")
-        .setRequired(true)
-        .setCustomId("task")));
-    await interaction.showModal(modal);
     return "SUCCESS";
 });
 (0, Command_1.addButtonHandler)(async (interaction, { data }) => {
